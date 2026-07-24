@@ -1,0 +1,11 @@
+
+server:
+  port: ":8765"
+mysql:
+  db: "bee"
+  host: "localhost"
+  port: "3306"
+  username: "root"
+  password: "0987654321"
+  maxOpenConns: 10
+  maxIdleConns: 10
