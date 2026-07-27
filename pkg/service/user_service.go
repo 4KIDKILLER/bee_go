@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"goserver/pkg/dao"
+	"goserver/pkg/dto"
+	"goserver/pkg/model"
 	"strings"
 )
 
@@ -22,26 +24,46 @@ func NewUserService(userDao *dao.UserDao) (userService *UserService) {
 	return
 }
 
-func (userService *UserService) UserRegister(username, password, avatar string) (bool, error) {
-	username = strings.TrimSpace(username)
-	if username == "" {
-		return false, ErrUsernameRequired
+func (userService *UserService) LoginService(username, password string) (beeUser *model.BeeUser, err error) {
+	if strings.TrimSpace(username) == "" {
+		return nil, ErrUsernameRequired
 	}
 	if strings.TrimSpace(password) == "" {
+		return nil, ErrPasswordRequired
+	}
+	beeUser, err = userService.userDao.QueryUserByNameAndPassword(username, password)
+
+	return
+}
+
+func (userService *UserService) UserRegisterService(registerReq *dto.RegisterReq) (bool, error) {
+	if strings.TrimSpace(registerReq.Username) == "" {
+		return false, ErrUsernameRequired
+	}
+
+	if strings.TrimSpace(registerReq.Password) == "" {
 		return false, ErrPasswordRequired
 	}
-	if strings.TrimSpace(avatar) == "" {
-		avatar = "https://go.dev/images/go-logo-white.svg"
+	if strings.TrimSpace(registerReq.Avatar) == "" {
+		registerReq.Avatar = "https://go.dev/images/go-logo-white.svg"
 	}
 
-	result, err := userService.userDao.Insert(username, password, avatar)
-	if err != nil {
-		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, err)
+	count, countErr := userService.userDao.CountUserByName(registerReq.Username)
+	if countErr != nil {
+		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, countErr)
+	}
+	if count > 0 {
+		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, "当前用户名已存在")
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	insert, insertErr := userService.userDao.Insert(registerReq.Username, registerReq.Password, registerReq.Avatar)
+	if insertErr != nil {
+		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, insertErr)
+	}
+
+	rowsAffected, err := insert.RowsAffected()
 	if err != nil {
-		return false, fmt.Errorf("%w: 获取写入结果失败: %v", ErrRegisterFailed, err)
+		return false, fmt.Errorf("%w: 注册失败: %v", ErrRegisterFailed, err)
 	}
 	if rowsAffected != 1 {
 		return false, ErrRegisterFailed

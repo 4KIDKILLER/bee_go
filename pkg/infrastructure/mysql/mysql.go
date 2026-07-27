@@ -8,16 +8,15 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func NewMysqlConn(confg *config.Config) (sqlxDB *sqlx.DB, sqlxErr error) {
-	mysqlConf := confg.Mysql
+func NewMysqlConn(confg *config.MysqlConfig) (sqlxDB *sqlx.DB, sqlxErr error) {
 
 	dbDrive := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		mysqlConf.Username,
-		mysqlConf.Password,
-		mysqlConf.Host,
-		mysqlConf.Port,
-		mysqlConf.DB,
+		confg.Username,
+		confg.Password,
+		confg.Host,
+		confg.Port,
+		confg.DB,
 	)
 
 	sqlxDB, sqlxErr = sqlx.Open("mysql", dbDrive)
@@ -25,9 +24,9 @@ func NewMysqlConn(confg *config.Config) (sqlxDB *sqlx.DB, sqlxErr error) {
 		return
 	}
 	//设置数据库连接池中允许存在的最大打开连接数
-	sqlxDB.SetMaxOpenConns(mysqlConf.MaxOpenConns)
+	sqlxDB.SetMaxOpenConns(confg.MaxOpenConns)
 	//设置连接池中最多可以保留的空闲连接数量
-	sqlxDB.SetMaxIdleConns(mysqlConf.MaxIdleConns)
+	sqlxDB.SetMaxIdleConns(confg.MaxIdleConns)
 
 	return
 }
