@@ -51,7 +51,19 @@ func (this *UserController) BindUserController() {
 		用户登录
 	*/
 	this.mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
+		var loginReq dto.LoginReq
 
+		err := json.NewDecoder(r.Body).Decode(&loginReq)
+
+		if err != nil {
+			this.responseJson.SendMessage(602, nil, "参数解析失败:"+err.Error())
+		}
+
+		beeUser, loginErr := this.userService.LoginService(loginReq.Username, loginReq.Password)
+		// if loginErr != nil {
+		// 	result = this.responseJson.SendMessage(601, nil, registerErr.Error())
+		// }
+		log.Println(beeUser, loginErr)
 	})
 
 	//用户注册
