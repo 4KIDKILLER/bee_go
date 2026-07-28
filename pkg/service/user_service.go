@@ -56,7 +56,11 @@ func (userService *UserService) UserRegisterService(registerReq *dto.RegisterReq
 		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, "当前用户名已存在")
 	}
 
-	insert, insertErr := userService.userDao.Insert(registerReq.Username, registerReq.Password, registerReq.Avatar)
+	countUser, _ := userService.userDao.CountByUser()
+
+	userId := 100000 + countUser
+
+	insert, insertErr := userService.userDao.Insert(registerReq.Username, registerReq.Password, registerReq.Avatar, userId)
 	if insertErr != nil {
 		return false, fmt.Errorf("%w: %v", ErrRegisterFailed, insertErr)
 	}

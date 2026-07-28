@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"goserver/pkg/dto"
+	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
 	"log"
@@ -10,12 +11,14 @@ import (
 )
 
 type UserController struct {
+	jwt          *jwt.BeeJwt
 	mux          *http.ServeMux
 	userService  *service.UserService
 	responseJson *utils.ResponseJson
 }
 
 func NewUserController(
+	jwt *jwt.BeeJwt,
 	mux *http.ServeMux,
 	userService *service.UserService,
 	responseJson *utils.ResponseJson,
@@ -23,6 +26,7 @@ func NewUserController(
 	userController *UserController,
 ) {
 	userController = &UserController{
+		jwt,
 		mux,
 		userService,
 		responseJson,
@@ -60,10 +64,24 @@ func (this *UserController) BindUserController() {
 		}
 
 		beeUser, loginErr := this.userService.LoginService(loginReq.Username, loginReq.Password)
-		// if loginErr != nil {
-		// 	result = this.responseJson.SendMessage(601, nil, registerErr.Error())
-		// }
-		log.Println(beeUser, loginErr)
+		var result []byte
+		if loginErr != nil {
+			log.Println(loginErr.Error())
+			result = this.responseJson.SendMessage(601, nil, loginErr.Error())
+		} else {
+			token, tokenErr := this.jwt.GenerateToken(beeUser.Username, beeUser.UserId)
+			if tokenErr != nil {
+				result = this.responseJson.SendMessage(601, nil, tokenErr.Error())
+			} else {
+				loginInfo := map[string]string{
+					"token":    token,
+					"avatar":   beeUser.Avatar,
+					"username": beeUser.Username,
+				}
+				result = this.responseJson.SendSuccess(loginInfo)
+			}
+		}
+		w.Write(result)
 	})
 
 	//用户注册

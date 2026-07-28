@@ -16,15 +16,21 @@ func NewUserDao(mysql *sqlx.DB) (userDao *UserDao) {
 	return
 }
 
-func (userDao *UserDao) Insert(username, password, avatar string) (result sql.Result, err error) {
-	result, err = userDao.mysql.Exec("INSERT INTO `bee_user` (username,password,avatar) VALUES (?,?,?)", username, password, avatar)
+func (userDao *UserDao) Insert(username, password, avatar string, userId int) (result sql.Result, err error) {
+	result, err = userDao.mysql.Exec("INSERT INTO `bee_user` (`username`,`password`,`avatar`,`user_id`) VALUES (?,?,?,?)", username, password, avatar, userId)
 
 	return
 }
 
 func (userDao *UserDao) QueryUserByNameAndPassword(username, password string) (beeUser *model.BeeUser, err error) {
 	beeUser = &model.BeeUser{}
-	err = userDao.mysql.Get(beeUser, "SELECT `username`,`avatar`,`status` FROM `bee_user` WHERE `username`=? AND `password`=? AND `status`=1", username, password)
+	err = userDao.mysql.Get(beeUser, "SELECT `username`,`avatar`,`status`,`user_id` FROM `bee_user` WHERE `username`=? AND `password`=? AND `status`=1", username, password)
+
+	return
+}
+
+func (userDao *UserDao) CountByUser() (count int, err error) {
+	err = userDao.mysql.Get(&count, "SELECT COUNT(`username`) FROM `bee_user`")
 
 	return
 }

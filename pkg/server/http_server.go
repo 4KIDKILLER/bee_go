@@ -4,6 +4,7 @@ import (
 	"goserver/pkg/controller"
 	"goserver/pkg/dao"
 	"goserver/pkg/infrastructure/config"
+	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/infrastructure/mysql"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
@@ -25,12 +26,14 @@ func NewHttpServer(config *config.Config) *http.Server {
 
 	responseJson := utils.NewResponseJson()
 
+	//创建jwt验证器
+	jwt := jwt.NewBeeJwt()
 	//创建用户持久层
 	userDao := dao.NewUserDao(mysqlDb)
 	//创建用户服务层
 	userService := service.NewUserService(userDao)
 	//注册用户控制器
-	userController := controller.NewUserController(mux, userService, responseJson)
+	userController := controller.NewUserController(jwt, mux, userService, responseJson)
 	userController.BindUserController()
 
 	return &http.Server{
