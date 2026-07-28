@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrUsernameRequired = errors.New("用户名不能为空")
+	ErrGetUserFailed    = errors.New("用户查询失败")
 	ErrPasswordRequired = errors.New("密码不能为空")
 	ErrRegisterFailed   = errors.New("用户注册失败")
 )
@@ -21,6 +22,14 @@ type UserService struct {
 
 func NewUserService(userDao *dao.UserDao) (userService *UserService) {
 	userService = &UserService{userDao}
+	return
+}
+
+func (userService *UserService) GetUserInfoService(userId int) (beeUser *model.BeeUser, err error) {
+	beeUser, err = userService.userDao.QueryUserByUId(userId)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrGetUserFailed, err)
+	}
 	return
 }
 

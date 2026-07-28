@@ -35,6 +35,13 @@ func (userDao *UserDao) CountByUser() (count int, err error) {
 	return
 }
 
+func (userDao *UserDao) QueryUserByUId(userId int) (beeUser *model.BeeUser, err error) {
+	beeUser = &model.BeeUser{}
+	err = userDao.mysql.Get(beeUser, "SELECT `user_id`,`username`,`create_time`,`update_time`,`avatar`,`status` FROM `bee_user` WHERE `user_id`=?", userId)
+
+	return
+}
+
 func (userDao *UserDao) CountUserByName(username string) (count int, err error) {
 	err = userDao.mysql.Get(&count, "SELECT COUNT(`username`) FROM `bee_user` WHERE `username`=?", username)
 

@@ -4,30 +4,45 @@ import (
 	"goserver/pkg/controller"
 	"goserver/pkg/dao"
 	"goserver/pkg/infrastructure/config"
-	"goserver/pkg/infrastructure/jwt"
+	beeJwt "goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/infrastructure/mysql"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"log"
 	"net/http"
+	"strings"
 )
 
-func ProtectedMux(mux http.Handler, jwt *jwt.BeeJwt, wjson *utils.ResponseJson) http.Handler {
+func ProtectedMux(mux http.Handler, tokenParser *beeJwt.BeeJwt, wjson *utils.ResponseJson) http.Handler {
 	//初始化http路由
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, string(wjson.SendMessage(601, nil, "请登录")), http.StatusUnauthorized)
+		tokenString := tokenFromRequest(r)
+		if tokenString == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write(wjson.SendMessage(601, nil, "请登录"))
 			return
 		}
-		_, err := jwt.ParseToken(authHeader)
+		claims, err := tokenParser.ParseToken(tokenString)
 		if err != nil {
-			log.Println(err.Error())
-			http.Error(w, string(wjson.SendMessage(601, nil, "Invalid Token")), http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write(wjson.SendMessage(601, nil, "Invalid Token"))
 			return
 		}
-		mux.ServeHTTP(w, r)
+		mux.ServeHTTP(w, r.WithContext(beeJwt.WithClaims(r.Context(), claims)))
 	})
+}
+
+func tokenFromRequest(r *http.Request) string {
+	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
+	if authHeader != "" {
+
+		authParts := strings.Fields(authHeader)
+		if len(authParts) == 2 && strings.EqualFold(authParts[0], "Bearer") {
+			return authParts[1]
+		}
+		return authHeader
+	} else {
+		return ""
+	}
 }
 
 func NewHttpServer(config *config.Config) *http.Server {
@@ -43,15 +58,19 @@ func NewHttpServer(config *config.Config) *http.Server {
 	responseJson := utils.NewResponseJson()
 	mux := http.NewServeMux()
 	protectedMux := http.NewServeMux()
-	//创建jwt验证器
-	beeJwt := jwt.NewBeeJwt()
-	//创建用户持久层
+	beeJwt := beeJwt.NewBeeJwt()
+
 	userDao := dao.NewUserDao(mysqlDb)
-	//创建用户服务层
+	fileDao := dao.NewFileDao(mysqlDb)
+
 	userService := service.NewUserService(userDao)
-	//注册用户控制器
+	fileService := service.NewFileService(fileDao)
+
 	userController := controller.NewUserController(beeJwt, mux, protectedMux, userService, responseJson)
+	fileController := controller.NewFileController(beeJwt, mux, protectedMux, fileService, responseJson)
+
 	userController.BindUserController()
+	fileController.BindFileController()
 
 	mux.Handle("/", ProtectedMux(protectedMux, beeJwt, responseJson))
 
