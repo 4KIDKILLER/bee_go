@@ -13,13 +13,14 @@ import (
 type UserController struct {
 	jwt          *jwt.BeeJwt
 	mux          *http.ServeMux
+	protectedMux *http.ServeMux
 	userService  *service.UserService
 	responseJson *utils.ResponseJson
 }
 
 func NewUserController(
 	jwt *jwt.BeeJwt,
-	mux *http.ServeMux,
+	mux, protectedMux *http.ServeMux,
 	userService *service.UserService,
 	responseJson *utils.ResponseJson,
 ) (
@@ -28,6 +29,7 @@ func NewUserController(
 	userController = &UserController{
 		jwt,
 		mux,
+		protectedMux,
 		userService,
 		responseJson,
 	}
@@ -38,7 +40,7 @@ func (this *UserController) BindUserController() {
 	/*
 		获取用户信息
 	*/
-	this.mux.HandleFunc("GET /getUserInfo", func(w http.ResponseWriter, r *http.Request) {
+	this.protectedMux.HandleFunc("GET /getUserInfo", func(w http.ResponseWriter, r *http.Request) {
 
 		data := []string{
 			"123123",
@@ -74,9 +76,9 @@ func (this *UserController) BindUserController() {
 				result = this.responseJson.SendMessage(601, nil, tokenErr.Error())
 			} else {
 				loginInfo := map[string]string{
-					"token":    token,
 					"avatar":   beeUser.Avatar,
 					"username": beeUser.Username,
+					"token":    "Bearer " + token,
 				}
 				result = this.responseJson.SendSuccess(loginInfo)
 			}

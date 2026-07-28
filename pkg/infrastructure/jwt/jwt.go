@@ -43,7 +43,7 @@ func (beeJwt *BeeJwt) GenerateToken(username string, userId int) (token string, 
 func (beeJwt *BeeJwt) ParseToken(tokenString string) (*BeeClaims, error) {
 	token, err := jwtv5.ParseWithClaims(tokenString, &BeeClaims{}, func(token *jwtv5.Token) (any, error) {
 		return []byte(secret), nil
-	}, jwtv5.WithValidMethods([]string{"HS265"}))
+	}, jwtv5.WithValidMethods([]string{"HS256"}))
 
 	if token != nil {
 		if claims, ok := token.Claims.(*BeeClaims); ok && token.Valid {
