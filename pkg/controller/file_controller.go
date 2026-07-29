@@ -4,25 +4,23 @@ import (
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
+// 错误码范围6200-6250
 type FileController struct {
+	*BaseController
 	jwt          *jwt.BeeJwt
 	mux          *http.ServeMux
 	protectedMux *http.ServeMux
 	fileService  *service.FileService
-	responseJson *utils.ResponseJson
 }
 
 func NewFileController(
 	jwt *jwt.BeeJwt,
+	baseController *BaseController,
 	mux, protectedMux *http.ServeMux,
 	fileService *service.FileService,
 	responseJson *utils.ResponseJson,
@@ -30,65 +28,53 @@ func NewFileController(
 	fileController *FileController,
 ) {
 	fileController = &FileController{
-		jwt,
-		mux,
-		protectedMux,
-		fileService,
-		responseJson,
+		BaseController: baseController,
+		jwt:            jwt,
+		mux:            mux,
+		protectedMux:   protectedMux,
+		fileService:    fileService,
 	}
 	return
 }
 
 func (fileController *FileController) BindFileController() {
 	fileController.protectedMux.HandleFunc("POST /upload", func(w http.ResponseWriter, r *http.Request) {
+
 		// 限制请求体大小（例如 10MB），防止大文件耗尽服务器资源
 		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
 		//解析 multipart 表单，32MB 以内的文件会存内存，更大则存临时文件
 		parseErr := r.ParseMultipartForm(32 << 20)
 		if parseErr != nil {
-			http.Error(w, "File too large or parse error", http.StatusBadRequest)
+			fileController.writeError(w, http.StatusBadRequest, "文件过大或解析错误")
 			return
 		}
 		file, handler, fileErr := r.FormFile("file")
 		if fileErr != nil {
-			http.Error(w, "Error retrieving file", http.StatusBadRequest)
+			fileController.writeError(w, http.StatusBadRequest, "获取文件出错")
 			return
 		}
 		defer file.Close()
 
-		uploadDir := "./file"
-		if mkdirErr := os.MkdirAll(uploadDir, 0755); mkdirErr != nil {
-			http.Error(w, "Error creating upload dir", http.StatusInternalServerError)
-			return
-		}
+		parentId := r.FormValue("parentId")
 
 		//【重要】安全处理文件名，防止路径穿越攻击
 		// 使用 filepath.Base 去除任何路径信息，仅保留文件名本身
 		safeFilename := filepath.Base(strings.ReplaceAll(handler.Filename, "\\", "/"))
 		if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
-			http.Error(w, "Invalid filename", http.StatusBadRequest)
+			fileController.writeError(w, http.StatusBadRequest, "无效的文件名")
 			return
 		}
-
-		fileId, uuidErr := uuid.NewRandom()
-		if uuidErr != nil {
-			http.Error(w, "Error generating filename", http.StatusInternalServerError)
+		beeClaims, ok := jwt.ClaimsFromContext(r.Context())
+		if !ok || beeClaims == nil {
+			fileController.writeFail(w, "请登录", nil)
 			return
 		}
-		randomFilename := strings.ReplaceAll(fileId.String(), "-", "") + filepath.Ext(safeFilename)
-		dstPath := filepath.Join(uploadDir, randomFilename)
-
-		//创建目标文件并保存上传内容
-		dst, dstErr := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
-		if dstErr != nil {
-			http.Error(w, "Error saving file", http.StatusInternalServerError)
+		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, beeClaims.UserId)
+		if resultErr != nil {
+			fileController.writeFail(w, resultErr.Error(), nil)
 			return
-		}
-		defer dst.Close()
-
-		_, copyErr := io.Copy(dst, file)
-		if copyErr != nil {
-			http.Error(w, "Error saving file", http.StatusInternalServerError)
+		} else {
+			fileController.writeSuccess(w, "", nil)
 			return
 		}
 	})

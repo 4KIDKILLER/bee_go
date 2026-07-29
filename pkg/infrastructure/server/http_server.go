@@ -45,6 +45,39 @@ func tokenFromRequest(r *http.Request) string {
 	}
 }
 
+type contentTypeResponseWriter struct {
+	http.ResponseWriter
+}
+
+func (w contentTypeResponseWriter) WriteHeader(statusCode int) {
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	}
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w contentTypeResponseWriter) Write(data []byte) (int, error) {
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	}
+	return w.ResponseWriter.Write(data)
+}
+
+func middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // 允许所有域访问
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(contentTypeResponseWriter{ResponseWriter: w}, r)
+	})
+}
+
 func NewHttpServer(config *config.Config) *http.Server {
 	serverConf := config.Server
 	mysqlConf := config.Mysql
@@ -66,8 +99,9 @@ func NewHttpServer(config *config.Config) *http.Server {
 	userService := service.NewUserService(userDao)
 	fileService := service.NewFileService(fileDao)
 
-	userController := controller.NewUserController(beeJwt, mux, protectedMux, userService, responseJson)
-	fileController := controller.NewFileController(beeJwt, mux, protectedMux, fileService, responseJson)
+	baseController := controller.NewBaseController(responseJson)
+	userController := controller.NewUserController(beeJwt, baseController, mux, protectedMux, userService, responseJson)
+	fileController := controller.NewFileController(beeJwt, baseController, mux, protectedMux, fileService, responseJson)
 
 	userController.BindUserController()
 	fileController.BindFileController()
@@ -75,7 +109,7 @@ func NewHttpServer(config *config.Config) *http.Server {
 	mux.Handle("/", ProtectedMux(protectedMux, beeJwt, responseJson))
 
 	return &http.Server{
-		Handler: mux,
+		Handler: middleware(mux),
 		Addr:    serverConf.Port,
 	}
 }

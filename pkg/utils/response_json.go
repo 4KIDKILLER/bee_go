@@ -21,19 +21,25 @@ func jsonMarshal(response ResponseJson) []byte {
 	return result
 }
 
-func (this *ResponseJson) SendSuccess(data any) []byte {
+func (this *ResponseJson) SendSuccess(message string, data any) []byte {
+	if message == "" {
+		message = "操作成功"
+	}
 	return jsonMarshal(ResponseJson{
 		Code:    200,
 		Data:    data,
-		Message: "操作成功",
+		Message: message,
 	})
 }
 
-func (this *ResponseJson) SendFail(data any) []byte {
+func (this *ResponseJson) SendFail(message string, data any) []byte {
+	if message == "" {
+		message = "操作失败"
+	}
 	return jsonMarshal(ResponseJson{
 		Code:    601,
 		Data:    data,
-		Message: "操作失败",
+		Message: message,
 	})
 }
 
