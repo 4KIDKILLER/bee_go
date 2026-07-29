@@ -8,10 +8,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func NewMysqlConn(confg *config.MysqlConfig) (sqlxDB *sqlx.DB, sqlxErr error) {
+func NewMysqlConn(confg config.MysqlConfig) (sqlxDB *sqlx.DB, sqlxErr error) {
 
 	dbDrive := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		"%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local",
 		confg.Username,
 		confg.Password,
 		confg.Host,

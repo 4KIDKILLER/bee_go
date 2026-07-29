@@ -3,11 +3,16 @@ package service
 import (
 	"errors"
 	"goserver/pkg/dao"
+	"goserver/pkg/infrastructure/config"
 	"goserver/pkg/utils"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"log"
+
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -15,22 +20,29 @@ var (
 	Err6251 = errors.New("6251: 文件上传失败")
 	Err6252 = errors.New("6252: 文件上传失败")
 	Err6253 = errors.New("6253: 文件上传失败")
+	Err6254 = errors.New("6254: 文件上传失败")
+	Err6255 = errors.New("6255: 文件上传失败")
+	Err6256 = errors.New("6256: 文件上传失败")
+	Err6257 = errors.New("6257: 文件上传失败")
 )
 
 // 错误码范围6250-6299
 type FileService struct {
-	fileDao *dao.FileDao
+	fileDao    *dao.FileDao
+	fileConfig config.FileConfig
 }
 
-func NewFileService(fileDao *dao.FileDao) (fileService *FileService) {
-	fileService = &FileService{fileDao}
+func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileService *FileService) {
+	fileService = &FileService{
+		fileDao,
+		fileConfig,
+	}
 	return
 }
 
-func (fileService *FileService) CreateFileService(file multipart.File, parentId, fileName string, userId int) (bool, error) {
+func (fileService *FileService) CreateFileService(file multipart.File, parentId, fileName string, fileSize int64, userId int) (bool, error) {
 
-	uploadDir := "./file"
-	if mkdirErr := os.MkdirAll(uploadDir, 0755); mkdirErr != nil {
+	if mkdirErr := os.MkdirAll(fileService.fileConfig.Path, 0755); mkdirErr != nil {
 		return false, Err6250
 	}
 
@@ -41,7 +53,7 @@ func (fileService *FileService) CreateFileService(file multipart.File, parentId,
 	}
 
 	randomFilename := fileId + filepath.Ext(fileName)
-	dstPath := filepath.Join(uploadDir, randomFilename)
+	dstPath := filepath.Join(fileService.fileConfig.Path, randomFilename)
 
 	//创建目标文件并保存上传内容
 	dst, dstErr := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
@@ -54,6 +66,21 @@ func (fileService *FileService) CreateFileService(file multipart.File, parentId,
 	if copyErr != nil {
 		return false, Err6253
 	}
-	return false, nil
-	// fileService.fileDao.Insert(parentId, fileId, fileName, dstPath)
+
+	size := decimal.NewFromInt(fileSize).DivRound(decimal.NewFromInt(1024), 2)
+
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileName, dstPath, userId, 2, size)
+	if insertErr != nil {
+		log.Printf("%v: %v", Err6254, insertErr)
+		return false, Err6254
+	}
+
+	rowsAffected, err := insert.RowsAffected()
+	if err != nil {
+		return false, Err6255
+	}
+	if rowsAffected != 1 {
+		return false, Err6256
+	}
+	return true, nil
 }

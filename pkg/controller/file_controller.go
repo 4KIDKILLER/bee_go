@@ -48,33 +48,30 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeError(w, http.StatusBadRequest, "文件过大或解析错误")
 			return
 		}
-		file, handler, fileErr := r.FormFile("file")
+		file, fileHeader, fileErr := r.FormFile("file")
 		if fileErr != nil {
 			fileController.writeError(w, http.StatusBadRequest, "获取文件出错")
 			return
 		}
 		defer file.Close()
-
 		parentId := r.FormValue("parentId")
 
 		//【重要】安全处理文件名，防止路径穿越攻击
 		// 使用 filepath.Base 去除任何路径信息，仅保留文件名本身
-		safeFilename := filepath.Base(strings.ReplaceAll(handler.Filename, "\\", "/"))
+		safeFilename := filepath.Base(strings.ReplaceAll(fileHeader.Filename, "\\", "/"))
 		if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
 			fileController.writeError(w, http.StatusBadRequest, "无效的文件名")
 			return
 		}
-		beeClaims, ok := jwt.ClaimsFromContext(r.Context())
-		if !ok || beeClaims == nil {
-			fileController.writeFail(w, "请登录", nil)
-			return
-		}
-		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, beeClaims.UserId)
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, fileHeader.Size, beeClaims.UserId)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 			return
 		} else {
-			fileController.writeSuccess(w, "", nil)
+			fileController.writeSuccess(w, "文件上传成功", nil)
 			return
 		}
 	})

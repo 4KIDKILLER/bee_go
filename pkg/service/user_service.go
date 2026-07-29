@@ -5,6 +5,7 @@ import (
 	"goserver/pkg/dao"
 	"goserver/pkg/dto"
 	"goserver/pkg/model"
+	"log"
 	"strings"
 )
 
@@ -50,6 +51,7 @@ func (userService *UserService) LoginService(username, password string) (beeUser
 	beeUser, err = userService.userDao.QueryUserByNameAndPassword(username, password)
 
 	if err != nil {
+		log.Printf("%v: %v", Err6154, err)
 		return nil, Err6154
 	}
 

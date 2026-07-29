@@ -24,7 +24,7 @@ func ProtectedMux(mux http.Handler, tokenParser *beeJwt.BeeJwt, wjson *utils.Res
 		claims, err := tokenParser.ParseToken(tokenString)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(wjson.SendMessage(601, nil, "Invalid Token"))
+			w.Write(wjson.SendMessage(601, nil, "无效的Token"))
 			return
 		}
 		mux.ServeHTTP(w, r.WithContext(beeJwt.WithClaims(r.Context(), claims)))
@@ -79,11 +79,8 @@ func middleware(next http.Handler) http.Handler {
 }
 
 func NewHttpServer(config *config.Config) *http.Server {
-	serverConf := config.Server
-	mysqlConf := config.Mysql
-
 	//创建数据库连接池
-	mysqlDb, mysqlDbErr := mysql.NewMysqlConn(&mysqlConf)
+	mysqlDb, mysqlDbErr := mysql.NewMysqlConn(config.Mysql)
 	if mysqlDbErr != nil {
 		panic("数据库链接创建失败:" + mysqlDbErr.Error())
 	}
@@ -97,7 +94,7 @@ func NewHttpServer(config *config.Config) *http.Server {
 	fileDao := dao.NewFileDao(mysqlDb)
 
 	userService := service.NewUserService(userDao)
-	fileService := service.NewFileService(fileDao)
+	fileService := service.NewFileService(fileDao, config.Upload)
 
 	baseController := controller.NewBaseController(responseJson)
 	userController := controller.NewUserController(beeJwt, baseController, mux, protectedMux, userService, responseJson)
@@ -110,6 +107,6 @@ func NewHttpServer(config *config.Config) *http.Server {
 
 	return &http.Server{
 		Handler: middleware(mux),
-		Addr:    serverConf.Port,
+		Addr:    config.Server.Port,
 	}
 }
