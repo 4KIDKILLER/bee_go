@@ -10,4 +10,5 @@ mysql:
   maxIdleConns: 10
 file:
   path: "/usr/local/var/www/file/image"
+  thumb: "/usr/local/var/www/file/image/thumb"
   host: "http://localhost:9006/image/"

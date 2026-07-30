@@ -4,6 +4,7 @@ import (
 	"errors"
 	"goserver/pkg/dao"
 	"goserver/pkg/infrastructure/config"
+	"goserver/pkg/model"
 	"goserver/pkg/utils"
 	"io"
 	"mime/multipart"
@@ -27,6 +28,7 @@ var (
 	Err6258 = errors.New("6258: 文件夹创建失败")
 	Err6259 = errors.New("6259: 文件夹创建失败")
 	Err6260 = errors.New("6260: 文件夹创建失败")
+	Err6261 = errors.New("6261: 获取文件列表失败")
 )
 
 // 错误码范围6250-6299
@@ -106,4 +108,15 @@ func (fileService *FileService) CreateFolderService(parentId, folderName string,
 		return false, Err6259
 	}
 	return true, nil
+}
+
+func (fileService *FileService) GetUserFileList(parentId string, userId, page, pageSize int) ([]*model.BeeFile, error) {
+	fileList, err := fileService.fileDao.QueryFilesByUserId(parentId, userId, (page-1)*pageSize, pageSize)
+
+	if err != nil {
+		log.Printf("%v: %v", Err6261, err)
+		return nil, Err6261
+	}
+
+	return fileList, nil
 }

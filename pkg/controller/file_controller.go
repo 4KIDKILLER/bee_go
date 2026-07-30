@@ -6,6 +6,7 @@ import (
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -98,6 +99,30 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, "文件夹创建失败", nil)
 		} else {
 			fileController.writeSuccess(w, "文件夹创建成功", nil)
+		}
+	})
+	/*
+		获取用户文件列表
+	*/
+	fileController.protectedMux.HandleFunc("GET /getFileList", func(w http.ResponseWriter, r *http.Request) {
+
+		var getFileListReq dto.GetFileListReq
+
+		decodeErr := json.NewDecoder(r.Body).Decode(&getFileListReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		fileList, err := fileController.fileService.GetUserFileList(getFileListReq.ParentId, beeClaims.UserId, getFileListReq.Page, getFileListReq.PageSize)
+
+		if err != nil {
+			log.Println(err)
+			fileController.writeFail(w, "获取文件列表失败", nil)
+		} else {
+			fileController.writeSuccess(w, "获取文件列表成功", fileList)
 		}
 	})
 }

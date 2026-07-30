@@ -27,3 +27,10 @@ func (fileDao *FileDao) QueryFileByName(FileName string) (err error) {
 	err = fileDao.mysql.Get(&folder, "SELECT `parent_id`,`file_id`,`user_id`,`file_name`,`file_size`,`file_path`,`file_type`,`create_time`,`update_time` WHERE `file_name`=? AND `file_type`=2 AND `status`=1", FileName)
 	return
 }
+
+func (fileDao *FileDao) QueryFilesByUserId(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
+
+	err = fileDao.mysql.Select(&result, "SELECT `parent_id`,`file_id`,`user_id`,`file_name`,`file_size`,`file_type`,`create_time`,`update_time` FROM `bee_file` WHERE `user_id`=? AND `parent_id`=? AND `status`=1 ORDER BY `create_time` DESC LIMIT ?, ?", userId, parentId, page, pageSize)
+
+	return
+}

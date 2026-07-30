@@ -23,8 +23,9 @@ type MysqlConfig struct {
 }
 
 type FileConfig struct {
-	Path string `mapstructure:"path"`
-	Host string `mapstructure:"host"`
+	Path  string `mapstructure:"path"`
+	Host  string `mapstructure:"host"`
+	Thumb string `mapstructure:"thumb"`
 }
 
 func NewConfig() *Config {
