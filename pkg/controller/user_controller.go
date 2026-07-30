@@ -6,7 +6,6 @@ import (
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"log"
 	"net/http"
 )
 
@@ -68,7 +67,6 @@ func (userController *UserController) BindUserController() {
 
 		beeUser, loginErr := userController.userService.LoginService(loginReq.Username, loginReq.Password)
 		if loginErr != nil {
-			log.Println(loginErr.Error())
 			userController.writeFail(w, loginErr.Error(), nil)
 			return
 		}
@@ -100,7 +98,6 @@ func (userController *UserController) BindUserController() {
 
 		_, registerErr := userController.userService.UserRegisterService(&registerReq)
 		if registerErr != nil {
-			log.Println(registerErr.Error())
 			userController.writeFail(w, registerErr.Error(), nil)
 			return
 		}

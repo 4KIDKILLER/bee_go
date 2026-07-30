@@ -31,8 +31,8 @@ func (beeJwt *BeeJwt) GenerateToken(username string, userId int) (token string, 
 		Username: username,
 		UserId:   userId,
 		RegisteredClaims: jwtv5.RegisteredClaims{
-			//超时时间，从现在开始往后一小时
-			ExpiresAt: jwtv5.NewNumericDate(time.Now().Add(time.Hour)),
+			//超时时间，从现在开始往后8小时
+			ExpiresAt: jwtv5.NewNumericDate(time.Now().Add(time.Hour * 8)),
 			//签发时间
 			IssuedAt: jwtv5.NewNumericDate(time.Now()),
 			//发行人

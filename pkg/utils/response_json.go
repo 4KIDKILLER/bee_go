@@ -8,6 +8,13 @@ type ResponseJson struct {
 	Message string `json:"message"`
 }
 
+type PaginationJson[T any] struct {
+	List     []T `json:"list"`
+	Total    int `json:"total"`
+	Page     int `json:"page"`
+	PageSize int `json:"pageSize"`
+}
+
 func jsonMarshal(response ResponseJson) []byte {
 	result, err := json.Marshal(response)
 	if err != nil {

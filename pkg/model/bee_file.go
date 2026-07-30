@@ -13,9 +13,12 @@ type BeeFile struct {
 	FileSize   float64       `json:"fileSize" db:"file_size"`
 	FilePath   string        `json:"filePath" db:"file_path"`
 	FileType   int           `json:"fileType" db:"file_type"`
-	FileExt    string        `json:"fileExt" db:"file_ext"`
-	UpdateTime utils.BeeTime `json:"updateTime" db:"update_time"`
+	Tags       string        `json:"tags"`
+	Cover1     string        `json:"cover1" db:"cover_1"`
+	Cover2     string        `json:"cover2" db:"cover_2"`
+	Cover3     string        `json:"cover3" db:"cover_3"`
+	Remark     string        `json:"remark"`
 	CreateTime utils.BeeTime `json:"createTime" db:"create_time"`
-	Type       int           `json:"type"`
+	UpdateTime utils.BeeTime `json:"updateTime" db:"update_time"`
 	Status     int           `json:"status"`
 }

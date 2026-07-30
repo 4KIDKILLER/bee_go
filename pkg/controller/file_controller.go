@@ -6,9 +6,10 @@ import (
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"log"
+	"goserver/pkg/vo"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -61,6 +62,8 @@ func (fileController *FileController) BindFileController() {
 		}
 		defer file.Close()
 		parentId := r.FormValue("parentId")
+		tags := r.FormValue("tags")
+		remark := r.FormValue("remark")
 
 		//【重要】安全处理文件名，防止路径穿越攻击
 		// 使用 filepath.Base 去除任何路径信息，仅保留文件名本身
@@ -72,7 +75,7 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, fileHeader.Size, beeClaims.UserId)
+		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, tags, remark, fileHeader.Size, beeClaims.UserId)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 		} else {
@@ -92,8 +95,7 @@ func (fileController *FileController) BindFileController() {
 			return
 		}
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
-
-		_, insertErr := fileController.fileService.CreateFolderService(createFolderReq.ParentId, createFolderReq.FolderName, beeClaims.UserId)
+		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, beeClaims.UserId)
 
 		if insertErr != nil {
 			fileController.writeFail(w, "文件夹创建失败", nil)
@@ -106,23 +108,63 @@ func (fileController *FileController) BindFileController() {
 	*/
 	fileController.protectedMux.HandleFunc("GET /getFileList", func(w http.ResponseWriter, r *http.Request) {
 
-		var getFileListReq dto.GetFileListReq
+		query := r.URL.Query()
 
-		decodeErr := json.NewDecoder(r.Body).Decode(&getFileListReq)
-		if decodeErr != nil {
-			fileController.writeFail(w, "参数解析失败", nil)
+		parentId := query.Get("parendId")
+		pageStr := query.Get("page")
+		if pageStr == "" {
+			fileController.writeFail(w, "缺少page参数", nil)
+			return
+		}
+		pageSizeStr := query.Get("pageSize")
+		if pageStr == "" {
+			fileController.writeFail(w, "缺少pageSize参数", nil)
+			return
+		}
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		page, pageErr := strconv.Atoi(pageStr)
+		pageSize, pageSizeErr := strconv.Atoi(pageSizeStr)
+		if pageErr != nil || pageSizeErr != nil {
+			fileController.writeFail(w, "分页参数异常", nil)
 			return
 		}
 
-		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
-
-		fileList, err := fileController.fileService.GetUserFileList(getFileListReq.ParentId, beeClaims.UserId, getFileListReq.Page, getFileListReq.PageSize)
+		fileCount, fileList, err := fileController.fileService.GetUserFileList(parentId, beeClaims.UserId, page, pageSize)
 
 		if err != nil {
-			log.Println(err)
 			fileController.writeFail(w, "获取文件列表失败", nil)
-		} else {
-			fileController.writeSuccess(w, "获取文件列表成功", fileList)
+			return
 		}
+
+		dataList := make([]vo.FileListVo, 0, len(fileList))
+
+		for _, item := range fileList {
+			covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
+			tags := strings.Split(item.Tags, ",")
+			dataList = append(dataList, vo.FileListVo{
+				ParentId:   item.ParentId,
+				FileId:     item.FileId,
+				UserId:     item.UserId,
+				FileName:   item.FileName,
+				FileSize:   item.FileSize,
+				FilePath:   item.FilePath,
+				FileType:   item.FileType,
+				Tags:       tags,
+				Covers:     covers,
+				Remark:     item.Remark,
+				CreateTime: item.CreateTime,
+				UpdateTime: item.UpdateTime,
+			})
+		}
+
+		resultData := utils.PaginationJson[vo.FileListVo]{
+			List:     dataList,
+			Total:    fileCount,
+			Page:     page,
+			PageSize: pageSize,
+		}
+
+		fileController.writeSuccess(w, "获取文件列表成功", resultData)
 	})
 }
