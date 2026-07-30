@@ -5,6 +5,7 @@ import "github.com/spf13/viper"
 type Config struct {
 	Server ServerConfig `mapstructure:"server"`
 	Mysql  MysqlConfig  `mapstructure:"mysql"`
+	Upload FileConfig   `mapstructure:"file"`
 }
 
 type ServerConfig struct {
@@ -19,6 +20,12 @@ type MysqlConfig struct {
 	Password     string `mapstructure:"password"`
 	MaxOpenConns int    `mapstructure:"maxOpenConns"`
 	MaxIdleConns int    `mapstructure:"maxIdleConns"`
+}
+
+type FileConfig struct {
+	Path  string `mapstructure:"path"`
+	Host  string `mapstructure:"host"`
+	Thumb string `mapstructure:"thumb"`
 }
 
 func NewConfig() *Config {

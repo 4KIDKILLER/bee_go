@@ -2,7 +2,7 @@ package main
 
 import (
 	"goserver/pkg/infrastructure/config"
-	"goserver/pkg/server"
+	"goserver/pkg/infrastructure/server"
 	"log"
 	"net"
 	"net/http"

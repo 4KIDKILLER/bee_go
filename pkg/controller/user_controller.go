@@ -3,38 +3,45 @@ package controller
 import (
 	"encoding/json"
 	"goserver/pkg/dto"
+	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"log"
 	"net/http"
 )
 
+// 错误码范围6100-6150
 type UserController struct {
+	*BaseController
+	jwt          *jwt.BeeJwt
 	mux          *http.ServeMux
+	protectedMux *http.ServeMux
 	userService  *service.UserService
-	responseJson *utils.ResponseJson
 }
 
 func NewUserController(
-	mux *http.ServeMux,
+	jwt *jwt.BeeJwt,
+	baseController *BaseController,
+	mux, protectedMux *http.ServeMux,
 	userService *service.UserService,
 	responseJson *utils.ResponseJson,
 ) (
 	userController *UserController,
 ) {
 	userController = &UserController{
-		mux,
-		userService,
-		responseJson,
+		BaseController: baseController,
+		jwt:            jwt,
+		mux:            mux,
+		protectedMux:   protectedMux,
+		userService:    userService,
 	}
 	return
 }
 
-func (this *UserController) BindUserController() {
+func (userController *UserController) BindUserController() {
 	/*
 		获取用户信息
 	*/
-	this.mux.HandleFunc("GET /getUserInfo", func(w http.ResponseWriter, r *http.Request) {
+	userController.protectedMux.HandleFunc("GET /getUserInfo", func(w http.ResponseWriter, r *http.Request) {
 
 		data := []string{
 			"123123",
@@ -42,48 +49,59 @@ func (this *UserController) BindUserController() {
 			"231321",
 		}
 
-		result := this.responseJson.SendSuccess(data)
-
-		w.Write(result)
+		userController.writeSuccess(w, "", data)
 	})
 
 	/*
 		用户登录
 	*/
-	this.mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
+	userController.mux.HandleFunc("POST /login", func(w http.ResponseWriter, r *http.Request) {
 		var loginReq dto.LoginReq
 
 		err := json.NewDecoder(r.Body).Decode(&loginReq)
 
 		if err != nil {
-			this.responseJson.SendMessage(602, nil, "参数解析失败:"+err.Error())
+			userController.writeError(w, http.StatusBadRequest, "参数解析失败")
+			return
 		}
 
-		beeUser, loginErr := this.userService.LoginService(loginReq.Username, loginReq.Password)
-		// if loginErr != nil {
-		// 	result = this.responseJson.SendMessage(601, nil, registerErr.Error())
-		// }
-		log.Println(beeUser, loginErr)
+		beeUser, loginErr := userController.userService.LoginService(loginReq.Username, loginReq.Password)
+		if loginErr != nil {
+			userController.writeFail(w, loginErr.Error(), nil)
+			return
+		}
+
+		token, tokenErr := userController.jwt.GenerateToken(beeUser.Username, beeUser.UserId)
+		if tokenErr != nil {
+			userController.writeFail(w, tokenErr.Error(), nil)
+			return
+		}
+
+		loginInfo := map[string]string{
+			"avatar":   beeUser.Avatar,
+			"username": beeUser.Username,
+			"token":    "Bearer " + token,
+		}
+		userController.writeSuccess(w, "登录成功", loginInfo)
 	})
 
 	//用户注册
-	this.mux.HandleFunc("POST /register", func(w http.ResponseWriter, r *http.Request) {
+	userController.mux.HandleFunc("POST /register", func(w http.ResponseWriter, r *http.Request) {
 		var registerReq dto.RegisterReq
 
 		err := json.NewDecoder(r.Body).Decode(&registerReq)
 
 		if err != nil {
-			this.responseJson.SendMessage(602, nil, "参数解析失败:"+err.Error())
+			userController.writeError(w, http.StatusBadRequest, "参数解析失败")
+			return
 		}
 
-		_, registerErr := this.userService.UserRegisterService(&registerReq)
-		var result []byte
+		_, registerErr := userController.userService.UserRegisterService(&registerReq)
 		if registerErr != nil {
-			log.Println(registerErr.Error())
-			result = this.responseJson.SendMessage(601, nil, registerErr.Error())
-		} else {
-			result = this.responseJson.SendSuccess(nil)
+			userController.writeFail(w, registerErr.Error(), nil)
+			return
 		}
-		w.Write(result)
+
+		userController.writeSuccess(w, "注册成功", nil)
 	})
 }

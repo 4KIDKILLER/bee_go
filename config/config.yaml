@@ -1,4 +1,3 @@
-
 server:
   port: ":8765"
 mysql:
@@ -9,3 +8,7 @@ mysql:
   password: "0987654321"
   maxOpenConns: 10
   maxIdleConns: 10
+file:
+  path: "/usr/local/var/www/file/image"
+  thumb: "/usr/local/var/www/file/image/thumb"
+  host: "http://localhost:9006/image/"
