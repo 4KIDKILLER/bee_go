@@ -144,12 +144,12 @@ func (fileController *FileController) BindFileController() {
 			tags := strings.Split(item.Tags, ",")
 			dataList = append(dataList, vo.FileListVo{
 				ParentId:   item.ParentId,
-				FileId:     item.FileId,
+				Id:         item.FileId,
 				UserId:     item.UserId,
-				FileName:   item.FileName,
-				FileSize:   item.FileSize,
-				FilePath:   item.FilePath,
-				FileType:   item.FileType,
+				Name:       item.FileName,
+				Size:       item.FileSize,
+				Path:       item.FilePath,
+				Type:       item.FileType,
 				Tags:       tags,
 				Covers:     covers,
 				Remark:     item.Remark,
