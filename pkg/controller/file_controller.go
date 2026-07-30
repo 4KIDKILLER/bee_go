@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"encoding/json"
+	"goserver/pkg/dto"
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
@@ -38,6 +40,9 @@ func NewFileController(
 }
 
 func (fileController *FileController) BindFileController() {
+	/*
+		文件上传
+	*/
 	fileController.protectedMux.HandleFunc("POST /upload", func(w http.ResponseWriter, r *http.Request) {
 
 		// 限制请求体大小（例如 10MB），防止大文件耗尽服务器资源
@@ -69,10 +74,30 @@ func (fileController *FileController) BindFileController() {
 		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, fileHeader.Size, beeClaims.UserId)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
-			return
 		} else {
 			fileController.writeSuccess(w, "文件上传成功", nil)
+		}
+	})
+	/*
+		创建文件夹
+	*/
+	fileController.protectedMux.HandleFunc("POST /createFolder", func(w http.ResponseWriter, r *http.Request) {
+
+		var createFolderReq dto.CreateFolderReq
+
+		decodeErr := json.NewDecoder(r.Body).Decode(&createFolderReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
 			return
+		}
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		_, insertErr := fileController.fileService.CreateFolderService(createFolderReq.ParentId, createFolderReq.FolderName, beeClaims.UserId)
+
+		if insertErr != nil {
+			fileController.writeFail(w, "文件夹创建失败", nil)
+		} else {
+			fileController.writeSuccess(w, "文件夹创建成功", nil)
 		}
 	})
 }
