@@ -5,7 +5,7 @@ mysql:
   host: "localhost"
   port: "3306"
   username: "root"
-  password: "0987654321"
+  password: "LEE_1826@CSC"
   maxOpenConns: 10
   maxIdleConns: 10
 file:
