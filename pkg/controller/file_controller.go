@@ -75,7 +75,7 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		_, resultErr := fileController.fileService.CreateFileService(file, parentId, safeFilename, tags, remark, fileHeader.Size, beeClaims.UserId)
+		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, tags, remark, fileHeader.Size, beeClaims.UserId)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 		} else {
@@ -142,19 +142,25 @@ func (fileController *FileController) BindFileController() {
 		for _, item := range fileList {
 			covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
 			tags := strings.Split(item.Tags, ",")
+			name := item.FileId + item.FileExt
+			src := ""
+			if item.FileType == 2 {
+				src = fileController.config.Upload.Host + item.FilePath + name
+			}
 			dataList = append(dataList, vo.FileListVo{
-				ParentId:   item.ParentId,
-				Id:         item.FileId,
-				UserId:     item.UserId,
-				Name:       item.FileName,
-				Size:       item.FileSize,
-				Path:       item.FilePath,
-				Type:       item.FileType,
-				Tags:       tags,
-				Covers:     covers,
-				Remark:     item.Remark,
-				CreateTime: item.CreateTime,
-				UpdateTime: item.UpdateTime,
+				ParentId:     item.ParentId,
+				Id:           item.FileId,
+				UserId:       item.UserId,
+				Name:         name,
+				OriginalName: item.FileOriginalName,
+				Size:         item.FileSize,
+				Type:         item.FileType,
+				Tags:         tags,
+				Src:          src,
+				Covers:       covers,
+				Remark:       item.Remark,
+				CreateTime:   item.CreateTime,
+				UpdateTime:   item.UpdateTime,
 			})
 		}
 

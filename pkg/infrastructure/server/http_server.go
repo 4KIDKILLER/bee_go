@@ -96,7 +96,7 @@ func NewHttpServer(config *config.Config) *http.Server {
 	userService := service.NewUserService(userDao)
 	fileService := service.NewFileService(fileDao, config.Upload)
 
-	baseController := controller.NewBaseController(responseJson)
+	baseController := controller.NewBaseController(config, responseJson)
 	userController := controller.NewUserController(beeJwt, baseController, mux, protectedMux, userService, responseJson)
 	fileController := controller.NewFileController(beeJwt, baseController, mux, protectedMux, fileService, responseJson)
 

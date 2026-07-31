@@ -1,17 +1,20 @@
 package controller
 
 import (
+	"goserver/pkg/infrastructure/config"
 	"goserver/pkg/utils"
 	"net/http"
 )
 
 type BaseController struct {
+	config       *config.Config
 	responseJson *utils.ResponseJson
 }
 
-func NewBaseController(responseJson *utils.ResponseJson) *BaseController {
+func NewBaseController(config *config.Config, responseJson *utils.ResponseJson) *BaseController {
 	return &BaseController{
-		responseJson: responseJson,
+		config,
+		responseJson,
 	}
 }
 

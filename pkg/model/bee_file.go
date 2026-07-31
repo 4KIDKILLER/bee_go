@@ -9,8 +9,8 @@ type BeeFile struct {
 	ParentId         string        `json:"parentId" db:"parent_id"`
 	FileId           string        `json:"fileId" db:"file_id"`
 	UserId           int           `json:"userId" db:"user_id"`
-	FileName         string        `json:"fileName" db:"file_name"`
 	FileSize         float64       `json:"fileSize" db:"file_size"`
+	FileExt          string        `json:"fileExt" db:"file_ext"`
 	FileOriginalName string        `json:"fileOriginalName" db:"file_original_name"`
 	FilePath         string        `json:"filePath" db:"file_path"`
 	FileType         int           `json:"fileType" db:"file_type"`

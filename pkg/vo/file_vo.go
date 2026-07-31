@@ -9,9 +9,9 @@ type FileListVo struct {
 	Name         string        `json:"name"`
 	OriginalName string        `json:"originalName"`
 	Size         float64       `json:"size"`
-	Path         string        `json:"path"`
 	Type         int           `json:"type"`
 	Tags         []string      `json:"tags"`
+	Src          string        `json:"src"`
 	Covers       [3]string     `json:"covers"`
 	Remark       string        `json:"remark"`
 	CreateTime   utils.BeeTime `json:"createTime"`
