@@ -28,10 +28,10 @@ type FileConfig struct {
 	Thumb string `mapstructure:"thumb"`
 }
 
-func NewConfig() *Config {
+func NewConfig(env string) *Config {
 	viperObj := viper.New()
 	viperObj.AddConfigPath("config")
-	viperObj.SetConfigName("config")
+	viperObj.SetConfigName("config-" + env)
 	viperObj.SetConfigType("yaml")
 
 	if err := viperObj.ReadInConfig(); err != nil {
