@@ -11,7 +11,7 @@
  Target Server Version : 80046 (8.0.46)
  File Encoding         : 65001
 
- Date: 30/07/2026 20:56:56
+ Date: 31/07/2026 17:46:20
 */
 
 SET NAMES utf8mb4;
@@ -27,7 +27,7 @@ CREATE TABLE `bee_file` (
   `file_id` varchar(50) NOT NULL COMMENT '文件id',
   `user_id` int NOT NULL COMMENT '关联用户id',
   `file_original_name` varchar(50) DEFAULT NULL COMMENT '原文件名',
-  `file_name` varchar(50) DEFAULT NULL COMMENT '文件名称',
+  `file_ext` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '文件后缀名',
   `file_size` decimal(9,2) DEFAULT NULL COMMENT '文件大小,单位:Kb',
   `file_path` varchar(100) DEFAULT NULL COMMENT '存储地址',
   `file_type` tinyint DEFAULT NULL COMMENT '类型:1文件夹 2文件',
@@ -40,7 +40,7 @@ CREATE TABLE `bee_file` (
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
   `status` tinyint DEFAULT '1' COMMENT '文件状态:1正常 2禁用',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- ----------------------------
 -- Table structure for bee_user
@@ -56,6 +56,6 @@ CREATE TABLE `bee_user` (
   `avatar` varchar(100) DEFAULT NULL COMMENT '头像',
   `status` tinyint unsigned NOT NULL DEFAULT '1' COMMENT '状态: 1正常 2禁用',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
