@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -14,4 +16,9 @@ func GetUUID() (string, error) {
 	id := strings.ReplaceAll(uid.String(), "-", "")
 
 	return id, nil
+}
+
+func GetUploadPath() string {
+	now := time.Now()
+	return fmt.Sprintf("%d/%02d/%02d", now.Year(), now.Month(), now.Day())
 }

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"goserver/pkg/dto"
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
@@ -145,7 +146,7 @@ func (fileController *FileController) BindFileController() {
 			name := item.FileId + item.FileExt
 			src := ""
 			if item.FileType == 2 {
-				src = fileController.config.Upload.Host + item.FilePath + name
+				src = fmt.Sprintf("%s/%s/%s", fileController.config.Upload.Host, item.FilePath, name)
 			}
 			dataList = append(dataList, vo.FileListVo{
 				ParentId:     item.ParentId,

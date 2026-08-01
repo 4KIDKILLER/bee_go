@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 
 	"log"
-
-	"github.com/shopspring/decimal"
 )
 
 var (
@@ -55,7 +53,9 @@ func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileSer
 
 func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, tags, remark string, fileSize int64, userId int) (bool, error) {
 
-	if mkdirErr := os.MkdirAll(fileService.fileConfig.Path, 0755); mkdirErr != nil {
+	relPath := utils.GetUploadPath()
+	absPath := filepath.Join(fileService.fileConfig.Path, relPath)
+	if mkdirErr := os.MkdirAll(absPath, 0755); mkdirErr != nil {
 		return false, Err6250
 	}
 
@@ -64,7 +64,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 
 	fileExt := filepath.Ext(fileOriginalName)
 	randomFilename := fileId + fileExt
-	dstPath := filepath.Join(fileService.fileConfig.Path, randomFilename)
+	dstPath := filepath.Join(absPath, randomFilename)
 
 	//创建目标文件并保存上传内容
 	dst, dstErr := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
@@ -77,9 +77,8 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 	if copyErr != nil {
 		return false, Err6253
 	}
-	size := decimal.NewFromInt(fileSize).DivRound(decimal.NewFromInt(1024), 2)
 
-	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, dstPath, tags, "", "", "", remark, userId, 2, size)
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, relPath, tags, "", "", "", remark, fileSize, userId, 2)
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
 		return false, Err6254
@@ -100,8 +99,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	size, _ := decimal.NewFromString(".0")
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", reqData.DistPath, reqData.Tags, reqData.Cover1, reqData.Cover2, reqData.Cover3, reqData.Remark, userId, 1, size)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", reqData.Tags, reqData.Cover1, reqData.Cover2, reqData.Cover3, reqData.Remark, 0, userId, 1)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)

@@ -15,18 +15,18 @@ var systemConf *config.Config
 
 func init() {
 
-	host := flag.String("env", "mac", "服务器地址")
+	host := flag.String("env", "mac", "当前系统环境 [mac|windows]")
 
 	// 自定义 Usage 函数
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, `使用方法: myapp [选项]
-选项:
+		fmt.Fprintf(os.Stderr, `使用方法: go run cmd/main.gop [options]=[value]
+options:
 `)
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
-	fmt.Println("kkkkk")
+
 	if *host != "mac" && *host != "windows" {
 		panic("无效的-env参数")
 	}

@@ -8,7 +8,6 @@ type CreateFolderReq struct {
 	Cover3     string `json:"cover3"`
 	Remark     string `json:"remark"`
 	Tags       string `json:"tags"`
-	DistPath   string `json:"distPath"`
 }
 
 type GetFileListReq struct {
