@@ -18,13 +18,13 @@ func ProtectedMux(mux http.Handler, tokenParser *beeJwt.BeeJwt, wjson *utils.Res
 		tokenString := tokenFromRequest(r)
 		if tokenString == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(wjson.SendMessage(601, nil, "请登录"))
+			w.Write(wjson.SendMessage(7001, nil, "请登录"))
 			return
 		}
 		claims, err := tokenParser.ParseToken(tokenString)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write(wjson.SendMessage(601, nil, "无效的Token"))
+			w.Write(wjson.SendMessage(7001, nil, "无效的Token"))
 			return
 		}
 		mux.ServeHTTP(w, r.WithContext(beeJwt.WithClaims(r.Context(), claims)))

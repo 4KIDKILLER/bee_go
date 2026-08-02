@@ -68,7 +68,7 @@ func (fileController *FileController) BindFileController() {
 
 		//【重要】安全处理文件名，防止路径穿越攻击
 		// 使用 filepath.Base 去除任何路径信息，仅保留文件名本身
-		safeFilename := filepath.Base(strings.ReplaceAll(fileHeader.Filename, "\\", "/"))
+		safeFilename := strings.ToLower(filepath.Base(strings.ReplaceAll(fileHeader.Filename, "\\", "/")))
 		if safeFilename == "" || safeFilename == "." || safeFilename == ".." {
 			fileController.writeError(w, http.StatusBadRequest, "无效的文件名")
 			return

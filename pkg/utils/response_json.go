@@ -44,7 +44,7 @@ func (this *ResponseJson) SendFail(message string, data any) []byte {
 		message = "操作失败"
 	}
 	return jsonMarshal(ResponseJson{
-		Code:    601,
+		Code:    6001,
 		Data:    data,
 		Message: message,
 	})
