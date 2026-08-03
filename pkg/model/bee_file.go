@@ -13,6 +13,7 @@ type BeeFile struct {
 	FileExt          string        `json:"fileExt" db:"file_ext"`
 	FileOriginalName string        `json:"fileOriginalName" db:"file_original_name"`
 	FilePath         string        `json:"filePath" db:"file_path"`
+	FileThumbPath    string        `json:"fileThumbPath" db:"file_thumb_path"`
 	FileType         int           `json:"fileType" db:"file_type"`
 	Tags             string        `json:"tags"`
 	Cover1           string        `json:"cover1" db:"cover_1"`

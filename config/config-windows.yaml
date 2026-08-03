@@ -9,6 +9,7 @@ mysql:
   maxOpenConns: 10
   maxIdleConns: 10
 file:
+  thumb: "thumb"
   path: "D:/www/file"
-  thumb: "D:/www/file/thumbs"
+  original: "original"
   host: "http://localhost:9001"

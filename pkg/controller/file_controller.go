@@ -61,6 +61,10 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeError(w, http.StatusBadRequest, "获取文件出错")
 			return
 		}
+		if len(fileHeader.Filename) > 100 {
+			fileController.writeFail(w, "文件名称需小于50字符", nil)
+			return
+		}
 		defer file.Close()
 		parentId := r.FormValue("parentId")
 		tags := r.FormValue("tags")

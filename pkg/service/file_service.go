@@ -19,6 +19,7 @@ var (
 	UploadErr       = "文件上传失败"
 	CreateFolderErr = "文件夹创建失败"
 	GetFileListErr  = "获取文件列表失败"
+	CreateThumbErr  = "预览图创建失败"
 )
 
 var (
@@ -35,6 +36,9 @@ var (
 	Err6260 = errors.New("6260:" + CreateFolderErr)
 	Err6261 = errors.New("6261:" + GetFileListErr)
 	Err6262 = errors.New("6262:" + GetFileListErr)
+	Err6263 = errors.New("6263:" + CreateFolderErr)
+	Err6264 = errors.New("6264:" + CreateThumbErr)
+	Err6265 = errors.New("6265:" + CreateThumbErr)
 )
 
 // 错误码范围6250-6299
@@ -53,9 +57,10 @@ func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileSer
 
 func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, tags, remark string, fileSize int64, userId int) (bool, error) {
 
-	relPath := utils.GetUploadPath()
-	absPath := filepath.Join(fileService.fileConfig.Path, relPath)
-	if mkdirErr := os.MkdirAll(absPath, 0755); mkdirErr != nil {
+	uploadDir := utils.GetUploadDir(fileService.fileConfig)
+
+	oriAbsPath := filepath.Join(fileService.fileConfig.Path, uploadDir.Original)
+	if mkdirErr := os.MkdirAll(oriAbsPath, 0755); mkdirErr != nil {
 		return false, Err6250
 	}
 
@@ -64,7 +69,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 
 	fileExt := filepath.Ext(fileOriginalName)
 	randomFilename := fileId + fileExt
-	dstPath := filepath.Join(absPath, randomFilename)
+	dstPath := filepath.Join(oriAbsPath, randomFilename)
 
 	//创建目标文件并保存上传内容
 	dst, dstErr := os.OpenFile(dstPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
@@ -78,7 +83,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		return false, Err6253
 	}
 
-	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, relPath, tags, "", "", "", remark, fileSize, userId, 2)
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", tags, "", "", "", remark, fileSize, userId, 2)
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
 		return false, Err6254
@@ -91,6 +96,20 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 	if rowsAffected != 1 {
 		return false, Err6256
 	}
+
+	var thumbDstPath = filepath.Join(fileService.fileConfig.Path, uploadDir.Thumb, randomFilename)
+
+	//创建预览图生成协程
+	go func() {
+		compErr := utils.ImageCompression(dstPath, thumbDstPath, fileExt)
+		if compErr != nil {
+			log.Printf("%v: %v", Err6264, compErr)
+		}
+		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(uploadDir.Thumb, fileId)
+		if compErr != nil {
+			log.Printf("%v: %v", Err6265, thumbErr)
+		}
+	}()
 	return true, nil
 }
 
@@ -99,7 +118,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", reqData.Tags, reqData.Cover1, reqData.Cover2, reqData.Cover3, reqData.Remark, 0, userId, 1)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", reqData.Tags, reqData.Cover1, reqData.Cover2, reqData.Cover3, reqData.Remark, 0, userId, 1)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
