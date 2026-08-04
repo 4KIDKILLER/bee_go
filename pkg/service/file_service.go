@@ -118,7 +118,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", reqData.Tags, reqData.Cover1, reqData.Cover2, reqData.Cover3, reqData.Remark, 0, userId, 1)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", "", 0, userId, 1)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
