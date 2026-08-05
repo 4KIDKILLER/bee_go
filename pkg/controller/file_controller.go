@@ -115,7 +115,7 @@ func (fileController *FileController) BindFileController() {
 
 		query := r.URL.Query()
 
-		parentId := query.Get("parendId")
+		parentId := query.Get("parentId")
 		pageStr := query.Get("page")
 		if pageStr == "" {
 			fileController.writeFail(w, "缺少page参数", nil)

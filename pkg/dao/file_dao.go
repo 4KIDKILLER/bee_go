@@ -28,7 +28,7 @@ func (fileDao *FileDao) CountFileByParentId(userId int, parentId string) (count 
 }
 
 func (fileDao *FileDao) QueryUserFiles(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
-	err = fileDao.mysql.Select(&result, "SELECT `parent_id`,`file_id`,`user_id`,`file_original_name`,`file_ext`,`file_path`,`file_thumb_path`,`file_size`,`file_type`,`tags`,`cover_1`,`cover_2`,`cover_3`,`remark`,`create_time`,`update_time` FROM `bee_file` WHERE `user_id`=? AND `parent_id`=? AND `status`=1 ORDER BY `create_time` DESC LIMIT ?, ?", userId, parentId, page, pageSize)
+	err = fileDao.mysql.Select(&result, "SELECT `parent_id`,`file_id`,`user_id`,`file_original_name`,`file_ext`,`file_path`,`file_thumb_path`,`file_size`,`file_type`,`tags`,`cover_1`,`cover_2`,`cover_3`,`remark`,`create_time`,`update_time` FROM `bee_file` WHERE `user_id`=? AND `parent_id`=? AND `status`=1 ORDER BY `id` DESC LIMIT ?, ?", userId, parentId, page, pageSize)
 
 	return
 }
