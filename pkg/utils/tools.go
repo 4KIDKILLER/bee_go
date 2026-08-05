@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"goserver/pkg/infrastructure/config"
 	"image/png"
-	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,6 +53,28 @@ func ImageCompression(srcPath, dstPath, fileExt string) error {
 		return err
 	}
 
+	bounds := src.Bounds()
+	origW := bounds.Dx()
+	origH := bounds.Dy()
+
+	//将图片尺寸压小3分之1
+	scale := 2.0 / 3.0
+	newW := 0
+	newH := 0
+	if origW > origH {
+		newW = int(math.Round(float64(origW) * scale))
+		//以1280*720为标准，若压缩后宽度依旧大于1280，则直接使用1280
+		if newW > 1280 {
+			newW = 1280
+		}
+	} else {
+		newH = int(math.Round(float64(origH) * scale))
+		//以1280*720为标准，若压缩后高度依旧大于720，则直接使用720
+		if newH > 720 {
+			newH = 720
+		}
+	}
+
 	/*
 		滤镜|特点|速度|画质|适用场景
 		imaging.Lanczos|重采样滤镜的“画质标杆”|较慢|最高，锐利清晰|对画质要求极高的场景，例如用户点开大图查看的预览。
@@ -62,8 +84,8 @@ func ImageCompression(srcPath, dstPath, fileExt string) error {
 		maging.Box|简单的平均滤镜|非常快|较低，用于缩小图片时效果尚可|追求极致速度，画质要求不高的快速处理。
 		imaging.NearestNeighbor|最近邻插值，无抗锯齿|最快|最差，图像锯齿感强|基本不使用，除非是对速度有极端要求的特殊场景。
 	*/
-	dst := imaging.Resize(src, 1280, 720, imaging.NearestNeighbor)
-	log.Println(fileExt)
+	dst := imaging.Resize(src, newW, newH, imaging.NearestNeighbor)
+
 	switch fileExt {
 	case ".jpg", ".jpeg":
 		// JPEG 格式：质量 65 获得较小体积（可调整）

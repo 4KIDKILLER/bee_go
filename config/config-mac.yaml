@@ -12,4 +12,4 @@ file:
   thumb: "thumb"
   original: "original"
   path: "/usr/local/var/www/file"
-  host: "http://localhost:9006/"  
+  host: "http://localhost:9006"  

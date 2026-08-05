@@ -105,7 +105,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		if compErr != nil {
 			log.Printf("%v: %v", Err6264, compErr)
 		}
-		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(uploadDir.Thumb, fileId)
+		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(uploadDir.Thumb, fileId, userId)
 		if compErr != nil {
 			log.Printf("%v: %v", Err6265, thumbErr)
 		}
@@ -136,12 +136,12 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 }
 
 func (fileService *FileService) GetUserFileList(parentId string, userId, page, pageSize int) (int, []*model.BeeFile, error) {
-	fileCount, countErr := fileService.fileDao.CountFileByUserIdAndParentId(userId, parentId)
+	fileCount, countErr := fileService.fileDao.CountFileByParentId(userId, parentId)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
 		return 0, nil, Err6261
 	}
-	fileList, fileErr := fileService.fileDao.QueryFilesByUserId(parentId, userId, (page-1)*pageSize, pageSize)
+	fileList, fileErr := fileService.fileDao.QueryUserFiles(parentId, userId, (page-1)*pageSize, pageSize)
 	if fileErr != nil {
 		log.Printf("%v: %v", Err6261, fileErr)
 		return 0, nil, Err6262

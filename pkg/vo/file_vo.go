@@ -12,6 +12,7 @@ type FileListVo struct {
 	Type         int           `json:"type"`
 	Tags         []string      `json:"tags"`
 	Src          string        `json:"src"`
+	ThumbSrc     string        `json:"thumbSrc"`
 	Covers       [3]string     `json:"covers"`
 	Remark       string        `json:"remark"`
 	CreateTime   utils.BeeTime `json:"createTime"`

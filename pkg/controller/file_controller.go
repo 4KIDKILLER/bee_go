@@ -146,11 +146,16 @@ func (fileController *FileController) BindFileController() {
 
 		for _, item := range fileList {
 			covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
-			tags := strings.Split(item.Tags, ",")
+			tags := make([]string, 0, 3)
+			if item.Tags != "" {
+				tags = strings.Split(item.Tags, ",")
+			}
 			name := item.FileId + item.FileExt
 			src := ""
+			thumbSrc := ""
 			if item.FileType == 2 {
 				src = fmt.Sprintf("%s/%s/%s", fileController.config.Upload.Host, item.FilePath, name)
+				thumbSrc = fmt.Sprintf("%s/%s/%s", fileController.config.Upload.Host, item.FileThumbPath, name)
 			}
 			dataList = append(dataList, vo.FileListVo{
 				ParentId:     item.ParentId,
@@ -162,6 +167,7 @@ func (fileController *FileController) BindFileController() {
 				Type:         item.FileType,
 				Tags:         tags,
 				Src:          src,
+				ThumbSrc:     thumbSrc,
 				Covers:       covers,
 				Remark:       item.Remark,
 				CreateTime:   item.CreateTime,
