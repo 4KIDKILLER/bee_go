@@ -48,24 +48,39 @@ func (fileController *FileController) BindFileController() {
 	*/
 	fileController.protectedMux.HandleFunc("POST /upload", func(w http.ResponseWriter, r *http.Request) {
 
-		// 限制请求体大小（例如 10MB），防止大文件耗尽服务器资源
-		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+		const maxFileSize int64 = 10 << 20
+
+		/*
+			限制请求体大小（例如 10MB）。如不设置，若有人直接调用接口上传一个20GB文件，后端不会在10MiB时拒绝，
+			而是先接收完整的20GB。可能会导致文件耗尽服务器资源。通过设置http.MaxBytesReader，若超出请求体最大
+			限制服务端会直接重置请求，并且不会解析文件。
+		*/
+		r.Body = http.MaxBytesReader(w, r.Body, maxFileSize)
+
 		//解析 multipart 表单，32MB 以内的文件会存内存，更大则存临时文件
-		parseErr := r.ParseMultipartForm(32 << 20)
-		if parseErr != nil {
-			fileController.writeError(w, http.StatusBadRequest, "文件过大或解析错误")
+		if err := r.ParseMultipartForm(32 << 20); err != nil {
+			fileController.writeError(w, http.StatusRequestEntityTooLarge, "上传文件过大")
 			return
 		}
-		file, fileHeader, fileErr := r.FormFile("file")
-		if fileErr != nil {
+		defer r.MultipartForm.RemoveAll()
+
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
 			fileController.writeError(w, http.StatusBadRequest, "获取文件出错")
 			return
 		}
+		defer file.Close()
+
+		if fileHeader.Size > maxFileSize {
+			fileController.writeError(w, http.StatusRequestEntityTooLarge, "图片不能超过10MB")
+			return
+		}
+
 		if len(fileHeader.Filename) > 100 {
 			fileController.writeFail(w, "文件名称需小于50字符", nil)
 			return
 		}
-		defer file.Close()
+
 		parentId := r.FormValue("parentId")
 		tags := r.FormValue("tags")
 		remark := r.FormValue("remark")
