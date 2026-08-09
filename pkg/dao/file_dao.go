@@ -44,6 +44,6 @@ func (fileDao *FileDao) UploadOriginalNameByFileId(name, fileId string, userId i
 }
 
 func (fileDao *FileDao) UpdateStatusByFileIdAndFileType(fileId string, userId, fileType, status int) (result sql.Result, err error) {
-	result, err = fileDao.mysql.Exec("UPDATE `bee_file` SET `status`=? WHERE `file_id`=? AND `user_id`=? AND `file_typ", status, fileId, userId)
+	result, err = fileDao.mysql.Exec("UPDATE `bee_file` SET `status`=? WHERE `file_id`=? AND `user_id`=? AND `file_type`=?", status, fileId, userId, fileType)
 	return
 }

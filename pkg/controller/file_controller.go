@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"goserver/pkg/dto"
+	"goserver/pkg/infrastructure/dictionary"
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
 	"goserver/pkg/vo"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -209,13 +211,15 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, "参数解析失败", nil)
 			return
 		}
+		log.Println(removeReq)
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 		_, removeErr := fileController.fileService.RemoveFileService(removeReq.Id, beeClaims.UserId, removeReq.Type)
 
+		fileTypeName := dictionary.FileTypeDict[removeReq.Type]
 		if removeErr != nil {
-			fileController.writeFail(w, "文件删除失败", nil)
+			fileController.writeFail(w, fileTypeName+"删除失败", nil)
 		} else {
-			fileController.writeFail(w, "文件删除成功", nil)
+			fileController.writeSuccess(w, fileTypeName+"删除成功", nil)
 		}
 	})
 }
