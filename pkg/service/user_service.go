@@ -72,6 +72,7 @@ func (userService *UserService) UserRegisterService(registerReq *dto.RegisterReq
 
 	count, countErr := userService.userDao.CountUserByName(registerReq.Username)
 	if countErr != nil {
+		log.Printf("%v: %v", Err6157, countErr)
 		return false, Err6157
 	}
 	if count > 0 {
