@@ -20,6 +20,7 @@ var (
 	CreateFolderErr = "文件夹创建失败"
 	GetFileListErr  = "获取文件列表失败"
 	CreateThumbErr  = "预览图创建失败"
+	RemoveFileErr   = "删除失败"
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 	Err6263 = errors.New("6263:" + CreateFolderErr)
 	Err6264 = errors.New("6264:" + CreateThumbErr)
 	Err6265 = errors.New("6265:" + CreateThumbErr)
+	Err6266 = errors.New("6266:" + RemoveFileErr)
 )
 
 // 错误码范围6250-6299
@@ -135,7 +137,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	return true, nil
 }
 
-func (fileService *FileService) GetUserFileList(parentId string, userId, page, pageSize int) (int, []*model.BeeFile, error) {
+func (fileService *FileService) GetUserFileListService(parentId string, userId, page, pageSize int) (int, []*model.BeeFile, error) {
 	fileCount, countErr := fileService.fileDao.CountFileByParentId(userId, parentId)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
@@ -148,4 +150,14 @@ func (fileService *FileService) GetUserFileList(parentId string, userId, page, p
 	}
 
 	return fileCount, fileList, nil
+}
+
+func (fileService *FileService) RemoveFileService(fileId string, userId, fileType int) (bool, error) {
+	_, err := fileService.fileDao.UpdateStatusByFileIdAndFileType(fileId, userId, fileType, 2)
+	if err != nil {
+		log.Printf("%v: %v", Err6266, err)
+		return false, Err6266
+	}
+
+	return true, nil
 }

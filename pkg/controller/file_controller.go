@@ -150,7 +150,7 @@ func (fileController *FileController) BindFileController() {
 			return
 		}
 
-		fileCount, fileList, err := fileController.fileService.GetUserFileList(parentId, beeClaims.UserId, page, pageSize)
+		fileCount, fileList, err := fileController.fileService.GetUserFileListService(parentId, beeClaims.UserId, page, pageSize)
 
 		if err != nil {
 			fileController.writeFail(w, "获取文件列表失败", nil)
@@ -198,5 +198,24 @@ func (fileController *FileController) BindFileController() {
 		}
 
 		fileController.writeSuccess(w, "获取文件列表成功", resultData)
+	})
+	/*
+		删除文件或文件夹
+	*/
+	fileController.protectedMux.HandleFunc("POST /remove", func(w http.ResponseWriter, r *http.Request) {
+		var removeReq dto.RemoveReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&removeReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+		_, removeErr := fileController.fileService.RemoveFileService(removeReq.Id, beeClaims.UserId, removeReq.Type)
+
+		if removeErr != nil {
+			fileController.writeFail(w, "文件删除失败", nil)
+		} else {
+			fileController.writeFail(w, "文件删除成功", nil)
+		}
 	})
 }
