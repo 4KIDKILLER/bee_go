@@ -1,5 +1,5 @@
 server:
-  port: ":6002"
+  port: "0.0.0.0:6002"
 mysql:
   db: "bee"
   host: "localhost"
