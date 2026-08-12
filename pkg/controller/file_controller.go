@@ -9,7 +9,6 @@ import (
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
 	"goserver/pkg/vo"
-	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -211,7 +210,7 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, "参数解析失败", nil)
 			return
 		}
-		log.Println(removeReq)
+
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 		_, removeErr := fileController.fileService.RemoveFileService(removeReq.Id, beeClaims.UserId, removeReq.Type)
 
@@ -220,6 +219,27 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, fileTypeName+"删除失败", nil)
 		} else {
 			fileController.writeSuccess(w, fileTypeName+"删除成功", nil)
+		}
+	})
+
+	/*
+		修改文件/文件夹名称
+	*/
+	fileController.protectedMux.HandleFunc("POST /rename", func(w http.ResponseWriter, r *http.Request) {
+		var renameReq dto.RenameReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&renameReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+		_, renameErr := fileController.fileService.UpdateOriginalNameService(renameReq.Name, renameReq.Id, beeClaims.UserId)
+
+		if renameErr != nil {
+			fileController.writeFail(w, "修改失败", nil)
+		} else {
+			fileController.writeSuccess(w, "修改成功", nil)
 		}
 	})
 }

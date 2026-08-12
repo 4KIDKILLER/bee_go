@@ -20,3 +20,9 @@ type RemoveReq struct {
 	Id   string `json:"id"`
 	Type int    `json:"type"`
 }
+
+type RenameReq struct {
+	Id   string `json:"id"`
+	Type int    `json:"type"`
+	Name string `json:"name"`
+}

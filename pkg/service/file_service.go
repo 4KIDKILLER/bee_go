@@ -21,6 +21,7 @@ var (
 	GetFileListErr  = "获取文件列表失败"
 	CreateThumbErr  = "预览图创建失败"
 	RemoveFileErr   = "删除失败"
+	FileRenameErr   = "文件名称修改失败"
 )
 
 var (
@@ -41,6 +42,7 @@ var (
 	Err6264 = errors.New("6264:" + CreateThumbErr)
 	Err6265 = errors.New("6265:" + CreateThumbErr)
 	Err6266 = errors.New("6266:" + RemoveFileErr)
+	Err6267 = errors.New("6267:" + FileRenameErr)
 )
 
 // 错误码范围6250-6299
@@ -157,6 +159,17 @@ func (fileService *FileService) RemoveFileService(fileId string, userId, fileTyp
 	if err != nil {
 		log.Printf("%v: %v", Err6266, err)
 		return false, Err6266
+	}
+
+	return true, nil
+}
+
+func (fileService *FileService) UpdateOriginalNameService(name, fileId string, userId int) (bool, error) {
+	_, err := fileService.fileDao.UploadOriginalNameByFileId(name, fileId, userId)
+
+	if err != nil {
+		log.Printf("%v: %v", Err6267, err)
+		return false, Err6267
 	}
 
 	return true, nil
