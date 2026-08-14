@@ -242,4 +242,17 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeSuccess(w, "修改成功", nil)
 		}
 	})
+
+	/*
+		获取文件夹结构
+	*/
+	fileController.protectedMux.HandleFunc("GET /getFolderTree", func(w http.ResponseWriter, r *http.Request) {
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+		result, err := fileController.fileService.GetUserFileTreeService(beeClaims.UserId)
+		if err != nil {
+			fileController.writeFail(w, "获取文件夹列表失败", nil)
+		} else {
+			fileController.writeSuccess(w, "获取文件夹列表成功", result)
+		}
+	})
 }

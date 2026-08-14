@@ -22,6 +22,7 @@ var (
 	CreateThumbErr  = "预览图创建失败"
 	RemoveFileErr   = "删除失败"
 	FileRenameErr   = "文件名称修改失败"
+	GetFolderErr    = "获取文件夹列表失败"
 )
 
 var (
@@ -43,12 +44,21 @@ var (
 	Err6265 = errors.New("6265:" + CreateThumbErr)
 	Err6266 = errors.New("6266:" + RemoveFileErr)
 	Err6267 = errors.New("6267:" + FileRenameErr)
+	Err6268 = errors.New("6268:" + GetFolderErr)
 )
 
 // 错误码范围6250-6299
 type FileService struct {
 	fileDao    *dao.FileDao
 	fileConfig config.FileConfig
+}
+
+type FileTreeNode struct {
+	ParentId   string          `json:"parentId"`
+	FileId     string          `json:"fileId"`
+	UserId     int             `json:"userId"`
+	FolderName string          `json:"folderName"`
+	Children   []*FileTreeNode `json:"children"`
 }
 
 func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileService *FileService) {
@@ -173,4 +183,50 @@ func (fileService *FileService) UpdateOriginalNameService(name, fileId string, u
 	}
 
 	return true, nil
+}
+
+func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeNode, error) {
+	folderList, folderErr := fileService.fileDao.QueryUserFolders(userId)
+	if folderErr != nil {
+		log.Printf("%v: %v", Err6268, folderErr)
+		return nil, Err6268
+	}
+
+	tree := make([]*FileTreeNode, 0, len(folderList))
+	if len(folderList) == 0 {
+		return tree, nil
+	}
+
+	nodeMap := make(map[string]*FileTreeNode, len(folderList))
+	for _, folder := range folderList {
+		nodeMap[folder.FileId] = &FileTreeNode{
+			ParentId:   folder.ParentId,
+			FileId:     folder.FileId,
+			UserId:     folder.UserId,
+			FolderName: folder.FileOriginalName,
+			Children:   make([]*FileTreeNode, 0),
+		}
+	}
+
+	for _, folder := range folderList {
+		//按顺序从映射表中获取文件夹节点
+		node := nodeMap[folder.FileId]
+		//获取当前文件夹父级节点
+		parent, hasParent := nodeMap[folder.ParentId]
+
+		//如果当节点不存在父级节点，则为顶级节点，直接添加到tree列表
+		if folder.ParentId == "" || folder.ParentId == folder.FileId || !hasParent {
+			tree = append(tree, node)
+			continue
+		}
+		/*
+			否则设置到父级文件夹的children字段中,此处有一个非常总要的知识点由于tree中存放的是
+			节点的指针，nodeMap[folder.ParentId]和nodeMap[folder.FileId]获取的是文件指
+			针，所以能很方便的执行append操作，因为每次获取的都是一个地址只向的那个对象。指针直
+			接抹平了层级访问带来的对象获取问题。
+		*/
+		parent.Children = append(parent.Children, node)
+	}
+
+	return tree, nil
 }
