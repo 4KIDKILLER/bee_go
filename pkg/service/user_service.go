@@ -34,7 +34,7 @@ func NewUserService(userDao *dao.UserDao) (userService *UserService) {
 }
 
 func (userService *UserService) GetUserInfoService(userId int) (beeUser *model.BeeUser, err error) {
-	beeUser, err = userService.userDao.QueryUserByUId(userId)
+	beeUser, err = userService.userDao.SelectUserByUId(userId)
 	if err != nil {
 		return nil, Err6151
 	}
@@ -48,7 +48,7 @@ func (userService *UserService) LoginService(username, password string) (beeUser
 	if strings.TrimSpace(password) == "" {
 		return nil, Err6152
 	}
-	beeUser, err = userService.userDao.QueryUserByNameAndPassword(username, password)
+	beeUser, err = userService.userDao.SelectUserByNameAndPassword(username, password)
 
 	if err != nil {
 		log.Printf("%v: %v", Err6154, err)

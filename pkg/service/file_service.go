@@ -155,7 +155,7 @@ func (fileService *FileService) GetUserFileListService(parentId string, userId, 
 		log.Printf("%v: %v", Err6261, countErr)
 		return 0, nil, Err6261
 	}
-	fileList, fileErr := fileService.fileDao.QueryUserFiles(parentId, userId, (page-1)*pageSize, pageSize)
+	fileList, fileErr := fileService.fileDao.SelectUserFiles(parentId, userId, (page-1)*pageSize, pageSize)
 	if fileErr != nil {
 		log.Printf("%v: %v", Err6261, fileErr)
 		return 0, nil, Err6262
@@ -186,7 +186,7 @@ func (fileService *FileService) UpdateOriginalNameService(name, fileId string, u
 }
 
 func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeNode, error) {
-	folderList, folderErr := fileService.fileDao.QueryUserFolders(userId)
+	folderList, folderErr := fileService.fileDao.SelectUserFolders(userId)
 	if folderErr != nil {
 		log.Printf("%v: %v", Err6268, folderErr)
 		return nil, Err6268
