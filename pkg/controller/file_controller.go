@@ -203,19 +203,23 @@ func (fileController *FileController) BindFileController() {
 	/*
 		删除文件或文件夹
 	*/
-	fileController.protectedMux.HandleFunc("POST /remove", func(w http.ResponseWriter, r *http.Request) {
-		var removeReq dto.RemoveReq
-		decodeErr := json.NewDecoder(r.Body).Decode(&removeReq)
+	fileController.protectedMux.HandleFunc("POST /deleteSoft", func(w http.ResponseWriter, r *http.Request) {
+		var deleteSoftReq dto.DeleteSoftReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&deleteSoftReq)
 		if decodeErr != nil {
 			fileController.writeFail(w, "参数解析失败", nil)
 			return
 		}
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
-		_, removeErr := fileController.fileService.RemoveFileService(removeReq.Id, beeClaims.UserId, removeReq.Type)
-
-		fileTypeName := dictionary.FileTypeDict[removeReq.Type]
-		if removeErr != nil {
+		var err error
+		if deleteSoftReq.Type == 1 {
+			_, err = fileController.fileService.DeleteFolderSoftService(deleteSoftReq.Id, beeClaims.UserId)
+		} else {
+			_, err = fileController.fileService.DeleteFileSoftService(deleteSoftReq.Id, beeClaims.UserId, deleteSoftReq.Type)
+		}
+		fileTypeName := dictionary.FileTypeDict[deleteSoftReq.Type]
+		if err != nil {
 			fileController.writeFail(w, fileTypeName+"删除失败", nil)
 		} else {
 			fileController.writeSuccess(w, fileTypeName+"删除成功", nil)

@@ -16,7 +16,7 @@ type GetFileListReq struct {
 	PageSize int    `json:"pageSize"`
 }
 
-type RemoveReq struct {
+type DeleteSoftReq struct {
 	Id   string `json:"id"`
 	Type int    `json:"type"`
 }

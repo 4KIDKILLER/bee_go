@@ -20,7 +20,7 @@ var (
 	CreateFolderErr = "文件夹创建失败"
 	GetFileListErr  = "获取文件列表失败"
 	CreateThumbErr  = "预览图创建失败"
-	RemoveFileErr   = "删除失败"
+	RemoveFileErr   = "文件删除失败"
 	FileRenameErr   = "文件名称修改失败"
 	GetFolderErr    = "获取文件夹列表失败"
 )
@@ -45,6 +45,8 @@ var (
 	Err6266 = errors.New("6266:" + RemoveFileErr)
 	Err6267 = errors.New("6267:" + FileRenameErr)
 	Err6268 = errors.New("6268:" + GetFolderErr)
+	Err6269 = errors.New("6269:" + RemoveFileErr)
+	Err6270 = errors.New("6270:" + RemoveFileErr)
 )
 
 // 错误码范围6250-6299
@@ -164,7 +166,7 @@ func (fileService *FileService) GetUserFileListService(parentId string, userId, 
 	return fileCount, fileList, nil
 }
 
-func (fileService *FileService) RemoveFileService(fileId string, userId, fileType int) (bool, error) {
+func (fileService *FileService) DeleteFileSoftService(fileId string, userId, fileType int) (bool, error) {
 	_, err := fileService.fileDao.UpdateStatusByFileIdAndFileType(fileId, userId, fileType, 2)
 	if err != nil {
 		log.Printf("%v: %v", Err6266, err)
@@ -229,4 +231,20 @@ func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeN
 	}
 
 	return tree, nil
+}
+
+func (fileService *FileService) DeleteFolderSoftService(fileId string, userId int) (bool, error) {
+	fileIds, fileIdsErr := fileService.fileDao.SelectRecursionFilesByFolderId(fileId, userId)
+	if fileIdsErr != nil {
+		log.Printf("%v: %v", Err6269, fileIdsErr)
+		return false, Err6269
+	}
+
+	_, statusErr := fileService.fileDao.UpdateStatusByFileIdInIds(fileIds, 2, userId)
+	if statusErr != nil {
+		log.Printf("%v: %v", Err6270, statusErr)
+		return false, Err6270
+	}
+
+	return true, nil
 }
