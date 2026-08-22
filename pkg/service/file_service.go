@@ -47,6 +47,11 @@ var (
 	Err6268 = errors.New("6268:" + GetFolderErr)
 	Err6269 = errors.New("6269:" + RemoveFileErr)
 	Err6270 = errors.New("6270:" + RemoveFileErr)
+	Err6271 = errors.New("6271:" + RemoveFileErr)
+	Err6272 = errors.New("6272:" + RemoveFileErr)
+	Err6273 = errors.New("6273:" + RemoveFileErr)
+	Err6274 = errors.New("6274:" + RemoveFileErr)
+	Err6275 = errors.New("6275:" + RemoveFileErr)
 )
 
 // 错误码范围6250-6299
@@ -239,11 +244,61 @@ func (fileService *FileService) DeleteFolderSoftService(fileId string, userId in
 		log.Printf("%v: %v", Err6269, fileIdsErr)
 		return false, Err6269
 	}
-
 	_, statusErr := fileService.fileDao.UpdateStatusByFileIdInIds(fileIds, 2, userId)
 	if statusErr != nil {
 		log.Printf("%v: %v", Err6270, statusErr)
 		return false, Err6270
+	}
+
+	return true, nil
+}
+
+func (fileService *FileService) DeleteFolderHardService(userId int) (bool, error) {
+	resultList, err := fileService.fileDao.SelectFilesByStatusOrderByFileType(2, userId)
+	if err != nil {
+		log.Printf("%v: %v", Err6271, err)
+		return false, Err6271
+	}
+	var folderIds []string
+	var fileList []*model.BeeFile
+
+	for _, item := range resultList {
+		if item.FileType == 1 {
+			folderIds = append(folderIds, item.FileId)
+		} else {
+			fileList = append(fileList, item)
+		}
+	}
+	//删除文件夹并更新文件夹状态
+	if len(folderIds) > 0 {
+		_, err := fileService.fileDao.UpdateStatusByFileIdInIds(folderIds, 3, userId)
+		if err != nil {
+			log.Printf("%v: %v", Err6272, err)
+		}
+	}
+
+	if len(fileList) > 0 {
+		//删除文件并更新文件状态
+		for _, item := range fileList {
+			fileName := item.FileId + item.FileExt
+			originalPath := filepath.Join(fileService.fileConfig.Path, item.FilePath, fileName)
+			thumbPath := filepath.Join(fileService.fileConfig.Path, item.FileThumbPath, fileName)
+			originalErr := os.Remove(originalPath)
+			if originalErr != nil && !os.IsNotExist(originalErr) {
+				log.Printf("%v-%v: %v", Err6273, item.FileOriginalName, err)
+			}
+			thumbErr := os.Remove(thumbPath)
+			if thumbErr != nil && !os.IsNotExist(thumbErr) {
+				log.Printf("%v-%v: %v", Err6274, item.FileOriginalName, err)
+			}
+
+			if originalErr == nil || os.IsNotExist(originalErr) && thumbErr == nil || os.IsNotExist(thumbErr) {
+				_, err := fileService.fileDao.UpdateStatusByFileIdAndFileType(item.FileId, userId, item.FileType, 3)
+				if err != nil {
+					log.Printf("%v-%v: %v", Err6275, item.FileOriginalName, err)
+				}
+			}
+		}
 	}
 
 	return true, nil

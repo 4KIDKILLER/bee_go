@@ -8,7 +8,7 @@ mysql:
   username: "root"
   password: "LEE_1826@CSC"
   # username: "admin"
-  # password: "x5527w@mysql"
+  # password: "x552w@mysql"
   maxOpenConns: 10
   maxIdleConns: 10
 file:

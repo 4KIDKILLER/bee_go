@@ -53,12 +53,24 @@ func (fileDao *FileDao) SelectUserFolders(userId int) (result []*model.BeeFile, 
 }
 
 func (fileDao *FileDao) SelectRecursionFilesByFolderId(fileId string, userId int) (result []string, err error) {
-	err = fileDao.mysql.Select(&result, `WITH RECURSIVE file_tree AS (
-		SELECT file_id,file_type,file_original_name FROM bee_file WHERE file_id=? AND user_id=?
-		UNION ALL
-		SELECT f.file_id,f.file_type,f.file_original_name FROM bee_file f INNER JOIN file_tree t ON f.parent_id = t.file_id
-	)
-	SELECT file_id FROM file_tree`, fileId, userId)
+	//这里的result返回的类型是[]string,使用select需要注意只能有一列，
+	//即select file_id，不能多列select file_id,file_type
+	if fileId != "" {
+		err = fileDao.mysql.Select(&result, `WITH RECURSIVE file_tree AS (
+						SELECT file_id,file_type,file_original_name FROM bee_file WHERE file_id=? AND user_id=?
+						UNION ALL
+						SELECT f.file_id,f.file_type,f.file_original_name FROM bee_file f INNER JOIN file_tree t ON f.parent_id = t.file_id
+						)
+						SELECT file_id FROM file_tree`,
+			fileId,
+			userId,
+		)
+	} else {
+		err = fileDao.mysql.Select(&result, "SELECT file_id FROM bee_file WHERE user_id=? AND `status`=1",
+			userId,
+		)
+	}
+
 	return
 }
 
@@ -84,5 +96,10 @@ func (fileDao *FileDao) UpdateStatusByFileIdInIds(fileIds []string, status, user
 	if err != nil {
 		return 0, err
 	}
+	return
+}
+
+func (fileDao *FileDao) SelectFilesByStatusOrderByFileType(status, userId int) (result []*model.BeeFile, err error) {
+	err = fileDao.mysql.Select(&result, "SELECT file_id,file_type,file_ext,file_path,file_thumb_path FROM bee_file WHERE status=? AND user_id=? ORDER BY file_type ASC", status, userId)
 	return
 }

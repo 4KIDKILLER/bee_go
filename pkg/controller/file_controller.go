@@ -201,7 +201,7 @@ func (fileController *FileController) BindFileController() {
 		fileController.writeSuccess(w, "获取文件列表成功", resultData)
 	})
 	/*
-		删除文件或文件夹
+		软删除文件或文件夹
 	*/
 	fileController.protectedMux.HandleFunc("POST /deleteSoft", func(w http.ResponseWriter, r *http.Request) {
 		var deleteSoftReq dto.DeleteSoftReq
@@ -225,7 +225,19 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeSuccess(w, fileTypeName+"删除成功", nil)
 		}
 	})
+	/*
+		硬删除文件
+	*/
+	fileController.protectedMux.HandleFunc("POST /deleteHard", func(w http.ResponseWriter, r *http.Request) {
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+		_, err := fileController.fileService.DeleteFolderHardService(beeClaims.UserId)
+		if err != nil {
+			fileController.writeFail(w, "删除失败", nil)
+		} else {
+			fileController.writeFail(w, "删除成功", nil)
+		}
 
+	})
 	/*
 		修改文件/文件夹名称
 	*/
@@ -259,4 +271,5 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeSuccess(w, "获取文件夹列表成功", result)
 		}
 	})
+
 }
