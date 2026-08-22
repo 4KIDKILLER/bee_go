@@ -92,6 +92,9 @@ func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileSer
 		thumbnailTasks: make(chan thumbnailTask, thumbnailQueueSize),
 	}
 	// golang中chan是并发安全的，不会出现资源竞争，所以不需要考虑加锁
+	/*
+		开启10个协程消费管道数据
+	*/
 	for range thumbnailWorkerCount {
 		go fileService.thumbnailWorker()
 	}
