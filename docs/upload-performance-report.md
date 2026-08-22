@@ -380,7 +380,7 @@ return &http.Server{
 当前代码：
 
 ```go
-_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(uploadDir.Thumb, fileId, userId)
+_, thumbErr := fileService.fileDao.UpdateRowThumbPathByFileId(uploadDir.Thumb, fileId, userId)
 if compErr != nil {
     log.Printf("%v: %v", Err6265, thumbErr)
 }

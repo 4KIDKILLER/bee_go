@@ -52,6 +52,8 @@ var (
 	Err6273 = errors.New("6273:" + RemoveFileErr)
 	Err6274 = errors.New("6274:" + RemoveFileErr)
 	Err6275 = errors.New("6275:" + RemoveFileErr)
+	Err6276 = errors.New("6276:" + RemoveFileErr)
+	Err6277 = errors.New("6277:" + RemoveFileErr)
 )
 
 const (
@@ -109,7 +111,7 @@ func (fileService *FileService) thumbnailWorker() {
 			continue
 		}
 
-		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(task.thumbPath, task.fileId, task.userId)
+		_, thumbErr := fileService.fileDao.UpdateRowThumbPathByFileId(task.thumbPath, task.fileId, task.userId)
 		if thumbErr != nil {
 			log.Printf("%v: %v", Err6265, thumbErr)
 		}
@@ -199,12 +201,12 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 }
 
 func (fileService *FileService) GetUserFileListService(parentId string, userId, page, pageSize int) (int, []*model.BeeFile, error) {
-	fileCount, countErr := fileService.fileDao.CountFileByParentId(userId, parentId)
+	fileCount, countErr := fileService.fileDao.CountRowByParentId(userId, parentId)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
 		return 0, nil, Err6261
 	}
-	fileList, fileErr := fileService.fileDao.SelectUserFiles(parentId, userId, (page-1)*pageSize, pageSize)
+	fileList, fileErr := fileService.fileDao.SelectRowsLimitByUserId(parentId, userId, (page-1)*pageSize, pageSize)
 	if fileErr != nil {
 		log.Printf("%v: %v", Err6261, fileErr)
 		return 0, nil, Err6262
@@ -214,7 +216,7 @@ func (fileService *FileService) GetUserFileListService(parentId string, userId, 
 }
 
 func (fileService *FileService) DeleteFileSoftService(fileId string, userId, fileType int) (bool, error) {
-	_, err := fileService.fileDao.UpdateStatusByFileIdAndFileType(fileId, userId, fileType, 2)
+	_, err := fileService.fileDao.UpdateRowStatusByFileIdAndFileType(fileId, userId, fileType, 2)
 	if err != nil {
 		log.Printf("%v: %v", Err6266, err)
 		return false, Err6266
@@ -224,7 +226,7 @@ func (fileService *FileService) DeleteFileSoftService(fileId string, userId, fil
 }
 
 func (fileService *FileService) UpdateOriginalNameService(name, fileId string, userId int) (bool, error) {
-	_, err := fileService.fileDao.UploadOriginalNameByFileId(name, fileId, userId)
+	_, err := fileService.fileDao.UploadRowOriginalNameByFileId(name, fileId, userId)
 
 	if err != nil {
 		log.Printf("%v: %v", Err6267, err)
@@ -235,7 +237,7 @@ func (fileService *FileService) UpdateOriginalNameService(name, fileId string, u
 }
 
 func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeNode, error) {
-	folderList, folderErr := fileService.fileDao.SelectUserFolders(userId)
+	folderList, folderErr := fileService.fileDao.SelectRowsByUserId(userId)
 	if folderErr != nil {
 		log.Printf("%v: %v", Err6268, folderErr)
 		return nil, Err6268
@@ -281,12 +283,12 @@ func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeN
 }
 
 func (fileService *FileService) DeleteFolderSoftService(fileId string, userId int) (bool, error) {
-	fileIds, fileIdsErr := fileService.fileDao.SelectRecursionFilesByFolderId(fileId, userId)
+	fileIds, fileIdsErr := fileService.fileDao.SelectRowsRecursionByFileId(fileId, userId)
 	if fileIdsErr != nil {
 		log.Printf("%v: %v", Err6269, fileIdsErr)
 		return false, Err6269
 	}
-	_, statusErr := fileService.fileDao.UpdateStatusByFileIdInIds(fileIds, 2, userId)
+	_, statusErr := fileService.fileDao.UpdateRowsStatusByFileIdInIds(fileIds, 2, userId)
 	if statusErr != nil {
 		log.Printf("%v: %v", Err6270, statusErr)
 		return false, Err6270
@@ -296,7 +298,7 @@ func (fileService *FileService) DeleteFolderSoftService(fileId string, userId in
 }
 
 func (fileService *FileService) DeleteFolderHardService(userId int) (bool, error) {
-	resultList, err := fileService.fileDao.SelectFilesByStatusOrderByFileType(2, userId)
+	resultList, err := fileService.fileDao.SelectRowsByStatusOrderByFileType(2, userId)
 	if err != nil {
 		log.Printf("%v: %v", Err6271, err)
 		return false, Err6271
@@ -313,7 +315,7 @@ func (fileService *FileService) DeleteFolderHardService(userId int) (bool, error
 	}
 	//删除文件夹并更新文件夹状态
 	if len(folderIds) > 0 {
-		_, err := fileService.fileDao.UpdateStatusByFileIdInIds(folderIds, 3, userId)
+		_, err := fileService.fileDao.UpdateRowsStatusByFileIdInIds(folderIds, 3, userId)
 		if err != nil {
 			log.Printf("%v: %v", Err6272, err)
 		}
@@ -335,7 +337,7 @@ func (fileService *FileService) DeleteFolderHardService(userId int) (bool, error
 			}
 
 			if originalErr == nil || os.IsNotExist(originalErr) && thumbErr == nil || os.IsNotExist(thumbErr) {
-				_, err := fileService.fileDao.UpdateStatusByFileIdAndFileType(item.FileId, userId, item.FileType, 3)
+				_, err := fileService.fileDao.UpdateRowStatusByFileIdAndFileType(item.FileId, userId, item.FileType, 3)
 				if err != nil {
 					log.Printf("%v-%v: %v", Err6275, item.FileOriginalName, err)
 				}
@@ -344,4 +346,18 @@ func (fileService *FileService) DeleteFolderHardService(userId int) (bool, error
 	}
 
 	return true, nil
+}
+
+func (fileService *FileService) DeleteInvalidFileRecordService() (int64, error) {
+	result, err := fileService.fileDao.DeleteRowsByStatus(3)
+	if err != nil {
+		return 0, Err6276
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return 0, Err6277
+	}
+
+	return rows, nil
 }

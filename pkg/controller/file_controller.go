@@ -272,4 +272,15 @@ func (fileController *FileController) BindFileController() {
 		}
 	})
 
+	/*
+		清理无效文件数据
+	*/
+	fileController.protectedMux.HandleFunc("POST /clearInvalidRecord", func(w http.ResponseWriter, r *http.Request) {
+		result, err := fileController.fileService.DeleteInvalidFileRecordService()
+		if err != nil {
+			fileController.writeFail(w, "无效记录清理失败", err)
+		} else {
+			fileController.writeSuccess(w, "无效记录清理成功，共删除"+strconv.FormatInt(result, 10)+"条数据", result)
+		}
+	})
 }

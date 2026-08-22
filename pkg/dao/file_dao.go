@@ -21,38 +21,38 @@ func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, file
 	return
 }
 
-func (fileDao *FileDao) CountFileByParentId(userId int, parentId string) (count int, err error) {
+func (fileDao *FileDao) CountRowByParentId(userId int, parentId string) (count int, err error) {
 	err = fileDao.mysql.Get(&count, "SELECT COUNT(file_id) FROM bee_file WHERE user_id=? AND parent_id=? AND status=1", userId, parentId)
 	return
 }
 
-func (fileDao *FileDao) SelectUserFiles(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
+func (fileDao *FileDao) SelectRowsLimitByUserId(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
 	err = fileDao.mysql.Select(&result, "SELECT parent_id,file_id,user_id,file_original_name,file_ext,file_path,file_thumb_path,file_size,file_type,tags,cover_1,cover_2,cover_3,remark,create_time,update_time FROM bee_file WHERE user_id=? AND parent_id=? AND status=1 ORDER BY id DESC LIMIT ?, ?", userId, parentId, page, pageSize)
 
 	return
 }
 
-func (fileDao *FileDao) UpdateThumbPathByFileId(thumbPath, fileId string, userId int) (result sql.Result, err error) {
+func (fileDao *FileDao) UpdateRowThumbPathByFileId(thumbPath, fileId string, userId int) (result sql.Result, err error) {
 	result, err = fileDao.mysql.Exec("UPDATE bee_file SET file_thumb_path=? WHERE file_id=? AND user_id=?", thumbPath, fileId, userId)
 	return
 }
 
-func (fileDao *FileDao) UploadOriginalNameByFileId(name, fileId string, userId int) (result sql.Result, err error) {
+func (fileDao *FileDao) UploadRowOriginalNameByFileId(name, fileId string, userId int) (result sql.Result, err error) {
 	result, err = fileDao.mysql.Exec("UPDATE bee_file SET file_original_name=? WHERE file_id=? AND user_id=?", name, fileId, userId)
 	return
 }
 
-func (fileDao *FileDao) UpdateStatusByFileIdAndFileType(fileId string, userId, fileType, status int) (result sql.Result, err error) {
+func (fileDao *FileDao) UpdateRowStatusByFileIdAndFileType(fileId string, userId, fileType, status int) (result sql.Result, err error) {
 	result, err = fileDao.mysql.Exec("UPDATE bee_file SET status=? WHERE file_id=? AND user_id=? AND file_type=?", status, fileId, userId, fileType)
 	return
 }
 
-func (fileDao *FileDao) SelectUserFolders(userId int) (result []*model.BeeFile, err error) {
+func (fileDao *FileDao) SelectRowsByUserId(userId int) (result []*model.BeeFile, err error) {
 	err = fileDao.mysql.Select(&result, "SELECT parent_id,file_id,user_id,file_original_name FROM bee_file WHERE user_id=? AND file_type=1 AND status=1", userId)
 	return
 }
 
-func (fileDao *FileDao) SelectRecursionFilesByFolderId(fileId string, userId int) (result []string, err error) {
+func (fileDao *FileDao) SelectRowsRecursionByFileId(fileId string, userId int) (result []string, err error) {
 	//这里的result返回的类型是[]string,使用select需要注意只能有一列，
 	//即select file_id，不能多列select file_id,file_type
 	if fileId != "" {
@@ -74,7 +74,7 @@ func (fileDao *FileDao) SelectRecursionFilesByFolderId(fileId string, userId int
 	return
 }
 
-func (fileDao *FileDao) UpdateStatusByFileIdInIds(fileIds []string, status, userId int) (result int64, err error) {
+func (fileDao *FileDao) UpdateRowsStatusByFileIdInIds(fileIds []string, status, userId int) (result int64, err error) {
 	/*
 		使用sqlx.In函数构建in语法语句.这里会将IN (?)构建为fileIds一样长度的模版字符串
 		例如fileIds中长度为3,则构建的语法中IN (?)会变成IN (?,?,?),方便后续执行进行赋值
@@ -99,7 +99,12 @@ func (fileDao *FileDao) UpdateStatusByFileIdInIds(fileIds []string, status, user
 	return
 }
 
-func (fileDao *FileDao) SelectFilesByStatusOrderByFileType(status, userId int) (result []*model.BeeFile, err error) {
+func (fileDao *FileDao) SelectRowsByStatusOrderByFileType(status, userId int) (result []*model.BeeFile, err error) {
 	err = fileDao.mysql.Select(&result, "SELECT file_id,file_type,file_ext,file_path,file_thumb_path FROM bee_file WHERE status=? AND user_id=? ORDER BY file_type ASC", status, userId)
+	return
+}
+
+func (fileDao *FileDao) DeleteRowsByStatus(status int) (result sql.Result, err error) {
+	result, err = fileDao.mysql.Exec("DELETE FROM bee_file WHERE status=?", status)
 	return
 }
