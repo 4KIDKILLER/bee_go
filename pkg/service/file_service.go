@@ -58,7 +58,7 @@ var (
 
 const (
 	//缩略图创建协程最大限制
-	thumbnailWorkerCount = 20
+	thumbnailWorkerCount = 12
 	//任务队列最大限制
 	thumbnailQueueSize = 300
 )
