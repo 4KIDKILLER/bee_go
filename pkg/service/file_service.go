@@ -54,10 +54,27 @@ var (
 	Err6275 = errors.New("6275:" + RemoveFileErr)
 )
 
+const (
+	//缩略图创建协程最大限制
+	thumbnailWorkerCount = 10
+	//任务队列最大限制
+	thumbnailQueueSize = 300
+)
+
 // 错误码范围6250-6299
 type FileService struct {
-	fileDao    *dao.FileDao
-	fileConfig config.FileConfig
+	fileDao        *dao.FileDao
+	fileConfig     config.FileConfig
+	thumbnailTasks chan thumbnailTask
+}
+
+type thumbnailTask struct {
+	srcPath   string
+	dstPath   string
+	fileExt   string
+	thumbPath string
+	fileId    string
+	userId    int
 }
 
 type FileTreeNode struct {
@@ -70,10 +87,30 @@ type FileTreeNode struct {
 
 func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileService *FileService) {
 	fileService = &FileService{
-		fileDao,
-		fileConfig,
+		fileDao:        fileDao,
+		fileConfig:     fileConfig,
+		thumbnailTasks: make(chan thumbnailTask, thumbnailQueueSize),
+	}
+	// golang中chan是并发安全的，不会出现资源竞争，所以不需要考虑加锁
+	for range thumbnailWorkerCount {
+		go fileService.thumbnailWorker()
 	}
 	return
+}
+
+func (fileService *FileService) thumbnailWorker() {
+	for task := range fileService.thumbnailTasks {
+		compErr := utils.ImageCompression(task.srcPath, task.dstPath, task.fileExt)
+		if compErr != nil {
+			log.Printf("%v: %v", Err6264, compErr)
+			continue
+		}
+
+		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(task.thumbPath, task.fileId, task.userId)
+		if thumbErr != nil {
+			log.Printf("%v: %v", Err6265, thumbErr)
+		}
+	}
 }
 
 func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, tags, remark string, fileSize int64, userId int) (bool, error) {
@@ -97,10 +134,14 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 	if dstErr != nil {
 		return false, Err6252
 	}
-	defer dst.Close()
 
 	_, copyErr := io.Copy(dst, file)
 	if copyErr != nil {
+		_ = dst.Close()
+		return false, Err6253
+	}
+	// 入队前关闭文件，确保缩略图Worker读取到完整内容。
+	if closeErr := dst.Close(); closeErr != nil {
 		return false, Err6253
 	}
 
@@ -118,19 +159,17 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		return false, Err6256
 	}
 
-	var thumbDstPath = filepath.Join(fileService.fileConfig.Path, uploadDir.Thumb, randomFilename)
+	thumbDstPath := filepath.Join(fileService.fileConfig.Path, uploadDir.Thumb, randomFilename)
 
-	//创建预览图生成协程
-	go func() {
-		compErr := utils.ImageCompression(dstPath, thumbDstPath, fileExt)
-		if compErr != nil {
-			log.Printf("%v: %v", Err6264, compErr)
-		}
-		_, thumbErr := fileService.fileDao.UpdateThumbPathByFileId(uploadDir.Thumb, fileId, userId)
-		if compErr != nil {
-			log.Printf("%v: %v", Err6265, thumbErr)
-		}
-	}()
+	// 将任务交给固定的缩略图Worker；队列中的300个等待槽都被占用时在这里等待。
+	fileService.thumbnailTasks <- thumbnailTask{
+		srcPath:   dstPath,
+		dstPath:   thumbDstPath,
+		fileExt:   fileExt,
+		thumbPath: uploadDir.Thumb,
+		fileId:    fileId,
+		userId:    userId,
+	}
 	return true, nil
 }
 
