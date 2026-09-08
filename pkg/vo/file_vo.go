@@ -10,7 +10,7 @@ type FileListVo struct {
 	OriginalName string            `json:"originalName"`
 	Size         float64           `json:"size"`
 	Type         int               `json:"type"`
-	Tags         []string          `json:"tags"`
+	Tags         []FileTagListVo   `json:"tags"`
 	Src          string            `json:"src"`
 	ThumbSrc     string            `json:"thumbSrc"`
 	Covers       [3]string         `json:"covers"`

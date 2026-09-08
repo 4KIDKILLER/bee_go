@@ -9,7 +9,6 @@ import (
 	"net/http"
 )
 
-// 错误码范围6100-6150
 type UserController struct {
 	*BaseController
 	jwt          *jwt.BeeJwt

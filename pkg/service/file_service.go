@@ -2,11 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"goserver/pkg/dao"
 	"goserver/pkg/dto"
 	"goserver/pkg/infrastructure/config"
 	"goserver/pkg/model"
 	"goserver/pkg/utils"
+	"goserver/pkg/vo"
 	"io"
 	"mime/multipart"
 	"os"
@@ -23,6 +25,7 @@ var (
 	RemoveFileErr   = "文件删除失败"
 	FileRenameErr   = "文件名称修改失败"
 	GetFolderErr    = "获取文件夹列表失败"
+	GetTgsErr       = "获取文件标签失败"
 )
 
 var (
@@ -54,6 +57,7 @@ var (
 	Err6275 = errors.New("6275:" + RemoveFileErr)
 	Err6276 = errors.New("6276:" + RemoveFileErr)
 	Err6277 = errors.New("6277:" + RemoveFileErr)
+	Err6278 = errors.New("6278:" + GetTgsErr)
 )
 
 const (
@@ -66,6 +70,7 @@ const (
 // 错误码范围6250-6299
 type FileService struct {
 	fileDao        *dao.FileDao
+	fileTagDao     *dao.FileTagDao
 	fileConfig     config.FileConfig
 	thumbnailTasks chan thumbnailTask
 }
@@ -87,10 +92,11 @@ type FileTreeNode struct {
 	Children   []*FileTreeNode `json:"children"`
 }
 
-func NewFileService(fileDao *dao.FileDao, fileConfig config.FileConfig) (fileService *FileService) {
+func NewFileService(fileDao *dao.FileDao, fileTagDao *dao.FileTagDao, fileConfig config.FileConfig) (fileService *FileService) {
 	fileService = &FileService{
 		fileDao:        fileDao,
 		fileConfig:     fileConfig,
+		fileTagDao:     fileTagDao,
 		thumbnailTasks: make(chan thumbnailTask, thumbnailQueueSize),
 	}
 	// golang中chan是并发安全的，不会出现资源竞争，所以不需要考虑加锁
@@ -200,19 +206,82 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	return true, nil
 }
 
-func (fileService *FileService) GetUserFileListService(parentId string, userId, page, pageSize int) (int, []*model.BeeFile, error) {
+func (fileService *FileService) GetUserFileListService(uploadHost, parentId string, userId, page, pageSize int) (*utils.PaginationJson[vo.FileListVo], error) {
 	fileCount, countErr := fileService.fileDao.CountRowByParentId(userId, parentId)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
-		return 0, nil, Err6261
+		return nil, Err6261
 	}
-	fileList, fileErr := fileService.fileDao.SelectRowsLimitByUserId(parentId, userId, (page-1)*pageSize, pageSize)
-	if fileErr != nil {
-		log.Printf("%v: %v", Err6261, fileErr)
-		return 0, nil, Err6262
+	fileList, err := fileService.fileDao.SelectRowsLimitByUserId(parentId, userId, (page-1)*pageSize, pageSize)
+	if err != nil {
+		log.Printf("%v: %v", Err6262, err)
+		return nil, Err6262
 	}
 
-	return fileCount, fileList, nil
+	if len(fileList) == 0 {
+		return &utils.PaginationJson[vo.FileListVo]{}, nil
+	}
+
+	fileIds := make([]string, 0, len(fileList))
+	for _, item := range fileList {
+		fileIds = append(fileIds, item.FileId)
+	}
+
+	fileTags, err := fileService.fileTagDao.SelectTagsByFileIds(fileIds, userId)
+	if err != nil {
+		log.Printf("%v: %v", Err6278, err)
+		return nil, Err6278
+	}
+
+	tagMap := make(map[string][]vo.FileTagListVo, len(fileIds))
+	for _, tag := range fileTags {
+		tagMap[tag.FileId] = append(tagMap[tag.FileId], vo.FileTagListVo{
+			Id:      tag.TagId,
+			TagName: tag.TagName,
+		})
+	}
+
+	dataList := make([]vo.FileListVo, 0, len(fileList))
+
+	for _, item := range fileList {
+		covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
+		tags := tagMap[item.FileId]
+		if tags == nil {
+			tags = make([]vo.FileTagListVo, 0)
+		}
+		name := item.FileId + item.FileExt
+		src := ""
+		thumbSrc := ""
+		if item.FileType == 2 {
+			src = fmt.Sprintf("%s/%s/%s", uploadHost, item.FilePath, name)
+			thumbSrc = fmt.Sprintf("%s/%s/%s", uploadHost, item.FileThumbPath, name)
+		}
+		dataList = append(dataList, vo.FileListVo{
+			ParentId:     item.ParentId,
+			Id:           item.FileId,
+			UserId:       item.UserId,
+			Name:         name,
+			OriginalName: item.FileOriginalName,
+			Size:         item.FileSize,
+			Type:         item.FileType,
+			Tags:         tags,
+			Src:          src,
+			ThumbSrc:     thumbSrc,
+			Covers:       covers,
+			Remark:       item.Remark,
+			CreateTime:   item.CreateTime,
+			UpdateTime:   item.UpdateTime,
+		})
+	}
+
+	resultData := &utils.PaginationJson[vo.FileListVo]{
+		List:     dataList,
+		Total:    fileCount,
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	return resultData, nil
 }
 
 func (fileService *FileService) DeleteFileSoftService(fileId string, userId, fileType int) (bool, error) {

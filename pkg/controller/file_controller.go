@@ -2,20 +2,17 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"goserver/pkg/dto"
 	"goserver/pkg/infrastructure/dictionary"
 	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/service"
 	"goserver/pkg/utils"
-	"goserver/pkg/vo"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-// 错误码范围6200-6250
 type FileController struct {
 	*BaseController
 	jwt          *jwt.BeeJwt
@@ -151,54 +148,14 @@ func (fileController *FileController) BindFileController() {
 			return
 		}
 
-		fileCount, fileList, err := fileController.fileService.GetUserFileListService(parentId, beeClaims.UserId, page, pageSize)
+		fileList, err := fileController.fileService.GetUserFileListService(fileController.config.Upload.Host, parentId, beeClaims.UserId, page, pageSize)
 
 		if err != nil {
 			fileController.writeFail(w, "获取文件列表失败", nil)
 			return
 		}
 
-		dataList := make([]vo.FileListVo, 0, len(fileList))
-
-		for _, item := range fileList {
-			covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
-			tags := make([]string, 0, 3)
-			if item.Tags != "" {
-				tags = strings.Split(item.Tags, ",")
-			}
-			name := item.FileId + item.FileExt
-			src := ""
-			thumbSrc := ""
-			if item.FileType == 2 {
-				src = fmt.Sprintf("%s/%s/%s", fileController.config.Upload.Host, item.FilePath, name)
-				thumbSrc = fmt.Sprintf("%s/%s/%s", fileController.config.Upload.Host, item.FileThumbPath, name)
-			}
-			dataList = append(dataList, vo.FileListVo{
-				ParentId:     item.ParentId,
-				Id:           item.FileId,
-				UserId:       item.UserId,
-				Name:         name,
-				OriginalName: item.FileOriginalName,
-				Size:         item.FileSize,
-				Type:         item.FileType,
-				Tags:         tags,
-				Src:          src,
-				ThumbSrc:     thumbSrc,
-				Covers:       covers,
-				Remark:       item.Remark,
-				CreateTime:   item.CreateTime,
-				UpdateTime:   item.UpdateTime,
-			})
-		}
-
-		resultData := utils.PaginationJson[vo.FileListVo]{
-			List:     dataList,
-			Total:    fileCount,
-			Page:     page,
-			PageSize: pageSize,
-		}
-
-		fileController.writeSuccess(w, "获取文件列表成功", resultData)
+		fileController.writeSuccess(w, "获取文件列表成功", fileList)
 	})
 	/*
 		软删除文件或文件夹

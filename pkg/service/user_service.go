@@ -24,6 +24,7 @@ var (
 	Err6161 = errors.New("6161: 注册失败")
 )
 
+// 错误码范围6150-6199
 type UserService struct {
 	userDao *dao.UserDao
 }

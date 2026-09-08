@@ -91,16 +91,20 @@ func NewHttpServer(config *config.Config) *http.Server {
 	beeJwt := beeJwt.NewBeeJwt()
 
 	userDao := dao.NewUserDao(mysqlDb)
+	fileTagDao := dao.NewFileTagDao(mysqlDb)
 	fileDao := dao.NewFileDao(mysqlDb)
 
 	userService := service.NewUserService(userDao)
-	fileService := service.NewFileService(fileDao, config.Upload)
+	fileTagService := service.NewFileTagService(fileTagDao)
+	fileService := service.NewFileService(fileDao, fileTagDao, config.Upload)
 
 	baseController := controller.NewBaseController(config, responseJson)
 	userController := controller.NewUserController(beeJwt, baseController, mux, protectedMux, userService, responseJson)
+	fileTagController := controller.NewFileTagController(beeJwt, baseController, mux, protectedMux, fileTagService, responseJson)
 	fileController := controller.NewFileController(beeJwt, baseController, mux, protectedMux, fileService, responseJson)
 
 	userController.BindUserController()
+	fileTagController.BindFileTagController()
 	fileController.BindFileController()
 
 	mux.Handle("/", ProtectedMux(protectedMux, beeJwt, responseJson))
