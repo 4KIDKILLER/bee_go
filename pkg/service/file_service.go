@@ -18,15 +18,17 @@ import (
 )
 
 var (
-	UploadErr       = "文件上传失败"
-	CreateFolderErr = "文件夹创建失败"
-	GetFileListErr  = "获取文件列表失败"
-	CreateThumbErr  = "预览图创建失败"
-	RemoveFileErr   = "文件删除失败"
-	FileRenameErr   = "文件名称修改失败"
-	GetFolderErr    = "获取文件夹列表失败"
-	GetTgsErr       = "获取文件标签失败"
-	UpdateRemarkErr = "修改文件备注失败"
+	UploadErr           = "文件上传失败"
+	CreateFolderErr     = "文件夹创建失败"
+	GetFileListErr      = "获取文件列表失败"
+	CreateThumbErr      = "预览图创建失败"
+	RemoveFileErr       = "文件删除失败"
+	FileRenameErr       = "文件名称修改失败"
+	GetFolderErr        = "获取文件夹列表失败"
+	GetTgsErr           = "获取文件标签失败"
+	UpdateRemarkErr     = "修改文件备注失败"
+	UpdateCoverErr      = "设置文件夹封面失败"
+	PositionValiFailErr = "非法的position参数"
 )
 
 var (
@@ -61,6 +63,9 @@ var (
 	Err6278 = errors.New("6278:" + GetTgsErr)
 	Err6279 = errors.New("6279:" + UpdateRemarkErr)
 	Err6280 = errors.New("6280:" + UpdateRemarkErr)
+	Err6281 = errors.New("6281:" + PositionValiFailErr)
+	Err6282 = errors.New("6282:" + UpdateCoverErr)
+	Err6283 = errors.New("6283:" + UpdateCoverErr)
 )
 
 const (
@@ -127,7 +132,7 @@ func (fileService *FileService) thumbnailWorker() {
 	}
 }
 
-func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, tags, remark string, fileSize int64, userId int) (bool, error) {
+func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, remark string, fileSize int64, userId int) (bool, error) {
 
 	uploadDir := utils.GetUploadDir(fileService.fileConfig)
 
@@ -159,7 +164,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		return false, Err6253
 	}
 
-	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", tags, "", "", "", remark, fileSize, userId, 2)
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", "", "", "", remark, fileSize, userId, 2)
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
 		return false, Err6254
@@ -192,7 +197,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", "", 0, userId, 1)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", 0, userId, 1)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
@@ -222,7 +227,12 @@ func (fileService *FileService) GetUserFileListService(uploadHost, parentId stri
 	}
 
 	if len(fileList) == 0 {
-		return &utils.PaginationJson[vo.FileListVo]{}, nil
+		return &utils.PaginationJson[vo.FileListVo]{
+			List:     make([]vo.FileListVo, 0),
+			Total:    0,
+			Page:     page,
+			PageSize: pageSize,
+		}, nil
 	}
 
 	fileIds := make([]string, 0, len(fileList))
@@ -443,6 +453,27 @@ func (fileService *FileService) UpdateRemarkService(fileId, remark string, userI
 
 	if err != nil {
 		return 0, Err6280
+	}
+
+	return rows, nil
+}
+
+func (fileService *FileService) UpdateFolderCoverService(cover, fileId string, position, userId int) (int64, error) {
+
+	if position < 1 || position > 3 {
+		return 0, Err6281
+	}
+
+	result, err := fileService.fileDao.UpdateCoverByFileId(cover, fileId, position, userId)
+
+	if err != nil {
+		return 0, Err6282
+	}
+
+	rows, err := result.RowsAffected()
+
+	if err != nil {
+		return 0, Err6283
 	}
 
 	return rows, nil

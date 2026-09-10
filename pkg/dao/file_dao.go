@@ -2,6 +2,7 @@ package dao
 
 import (
 	"database/sql"
+	"fmt"
 	"goserver/pkg/model"
 
 	"github.com/jmoiron/sqlx"
@@ -16,8 +17,8 @@ func NewFileDao(mysql *sqlx.DB) (fileDao *FileDao) {
 	return
 }
 
-func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, tags, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType int) (result sql.Result, err error) {
-	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,tags,cover_1,cover_2,cover_3,remark) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, tags, cover1, cover2, cover3, remark)
+func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType int) (result sql.Result, err error) {
+	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,cover_1,cover_2,cover_3,remark) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, cover1, cover2, cover3, remark)
 	return
 }
 
@@ -27,7 +28,7 @@ func (fileDao *FileDao) CountRowByParentId(userId int, parentId string) (count i
 }
 
 func (fileDao *FileDao) SelectRowsLimitByUserId(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
-	err = fileDao.mysql.Select(&result, "SELECT parent_id,file_id,user_id,file_original_name,file_ext,file_path,file_thumb_path,file_size,file_type,tags,cover_1,cover_2,cover_3,remark,create_time,update_time FROM bee_file WHERE user_id=? AND parent_id=? AND status=1 ORDER BY id DESC LIMIT ?, ?", userId, parentId, page, pageSize)
+	err = fileDao.mysql.Select(&result, "SELECT parent_id,file_id,user_id,file_original_name,file_ext,file_path,file_thumb_path,file_size,file_type,cover_1,cover_2,cover_3,remark,create_time,update_time FROM bee_file WHERE user_id=? AND parent_id=? AND status=1 ORDER BY id DESC LIMIT ?, ?", userId, parentId, page, pageSize)
 
 	return
 }
@@ -111,5 +112,12 @@ func (fileDao *FileDao) DeleteRowsByStatus(status int) (result sql.Result, err e
 
 func (fileDao *FileDao) UpdateRemarkByFileId(fileId, remark string, userId int) (result sql.Result, err error) {
 	result, err = fileDao.mysql.Exec("UPDATE bee_file SET remark=? WHERE file_id=? AND user_id=?", remark, fileId, userId)
+	return
+}
+
+func (fileDao *FileDao) UpdateCoverByFileId(cover, fileId string, position, userId int) (result sql.Result, err error) {
+
+	query := fmt.Sprintf("UPDATE bee_file SET cover_%d=? WHERE file_id=? AND user_id=?", position)
+	result, err = fileDao.mysql.Exec(query, cover, fileId, userId)
 	return
 }

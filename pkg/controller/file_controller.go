@@ -80,7 +80,6 @@ func (fileController *FileController) BindFileController() {
 		}
 
 		parentId := r.FormValue("parentId")
-		tags := r.FormValue("tags")
 		remark := r.FormValue("remark")
 
 		//【重要】安全处理文件名，防止路径穿越攻击
@@ -93,7 +92,7 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, tags, remark, fileHeader.Size, beeClaims.UserId)
+		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 		} else {
@@ -262,5 +261,27 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, "修改备注成功", nil)
 		}
 
+	})
+
+	/*
+		设置文件夹封面
+	*/
+	fileController.protectedMux.HandleFunc("POST /setCover", func(w http.ResponseWriter, r *http.Request) {
+		var setCoverReq dto.SetCoverReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&setCoverReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		result, err := fileController.fileService.UpdateFolderCoverService(setCoverReq.Cover, setCoverReq.Id, setCoverReq.Position, beeClaims.UserId)
+
+		if err != nil {
+			fileController.writeFail(w, "封面设置失败", err)
+		} else if result == 1 {
+			fileController.writeFail(w, "封面设置成功", nil)
+		}
 	})
 }

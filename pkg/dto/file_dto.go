@@ -31,3 +31,9 @@ type EditRemarkReq struct {
 	Id     string `json:"id"`
 	Remark string `json:"remark"`
 }
+
+type SetCoverReq struct {
+	Id       string `json:"id"`
+	Cover    string `json:"cover"`
+	Position int    `json:"position"`
+}

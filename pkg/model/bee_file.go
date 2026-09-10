@@ -13,7 +13,6 @@ type BeeFile struct {
 	FilePath         string            `json:"filePath" db:"file_path"`
 	FileThumbPath    string            `json:"fileThumbPath" db:"file_thumb_path"`
 	FileType         int               `json:"fileType" db:"file_type"`
-	Tags             string            `json:"tags"`
 	Cover1           string            `json:"cover1" db:"cover_1"`
 	Cover2           string            `json:"cover2" db:"cover_2"`
 	Cover3           string            `json:"cover3" db:"cover_3"`
