@@ -55,4 +55,25 @@ func (fileTagController *FileTagController) BindFileTagController() {
 			fileTagController.writeSuccess(w, "标签创建成功", nil)
 		}
 	})
+	/*
+		删除文件标签
+	*/
+	fileTagController.protectedMux.HandleFunc("POST /deleteTarget", func(w http.ResponseWriter, r *http.Request) {
+		var deleteTargetReq dto.DeleteTargetReq
+
+		decodeErr := json.NewDecoder(r.Body).Decode(&deleteTargetReq)
+
+		if decodeErr != nil {
+			fileTagController.writeError(w, http.StatusBadRequest, "参数解析失败")
+			return
+		}
+
+		_, err := fileTagController.fileTagService.DeleteFileTagService(deleteTargetReq.Id)
+
+		if err != nil {
+			fileTagController.writeFail(w, "标签删除失败", err)
+		} else {
+			fileTagController.writeSuccess(w, "标签删除成功", nil)
+		}
+	})
 }

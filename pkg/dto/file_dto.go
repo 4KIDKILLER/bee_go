@@ -26,3 +26,8 @@ type RenameReq struct {
 	Type int    `json:"type"`
 	Name string `json:"name"`
 }
+
+type EditRemarkReq struct {
+	Id     string `json:"id"`
+	Remark string `json:"remark"`
+}

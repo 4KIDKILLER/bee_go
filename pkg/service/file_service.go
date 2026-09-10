@@ -26,6 +26,7 @@ var (
 	FileRenameErr   = "文件名称修改失败"
 	GetFolderErr    = "获取文件夹列表失败"
 	GetTgsErr       = "获取文件标签失败"
+	UpdateRemarkErr = "修改文件备注失败"
 )
 
 var (
@@ -58,6 +59,8 @@ var (
 	Err6276 = errors.New("6276:" + RemoveFileErr)
 	Err6277 = errors.New("6277:" + RemoveFileErr)
 	Err6278 = errors.New("6278:" + GetTgsErr)
+	Err6279 = errors.New("6279:" + UpdateRemarkErr)
+	Err6280 = errors.New("6280:" + UpdateRemarkErr)
 )
 
 const (
@@ -426,6 +429,20 @@ func (fileService *FileService) DeleteInvalidFileRecordService() (int64, error) 
 	rows, err := result.RowsAffected()
 	if err != nil {
 		return 0, Err6277
+	}
+
+	return rows, nil
+}
+
+func (fileService *FileService) UpdateRemarkService(fileId, remark string, userId int) (int64, error) {
+	result, err := fileService.fileDao.UpdateRemarkByFileId(fileId, remark, userId)
+	if err != nil {
+		return 0, Err6279
+	}
+	rows, err := result.RowsAffected()
+
+	if err != nil {
+		return 0, Err6280
 	}
 
 	return rows, nil

@@ -240,4 +240,27 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeSuccess(w, "无效记录清理成功，共删除"+strconv.FormatInt(result, 10)+"条数据", result)
 		}
 	})
+
+	/*
+		修改文件/文件夹备注
+	*/
+	fileController.protectedMux.HandleFunc("POST /editRemark", func(w http.ResponseWriter, r *http.Request) {
+		var editRemarkReq dto.EditRemarkReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&editRemarkReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		result, err := fileController.fileService.UpdateRemarkService(editRemarkReq.Id, editRemarkReq.Remark, beeClaims.UserId)
+
+		if err != nil {
+			fileController.writeFail(w, "修改备注失败", err)
+		} else if result == 1 {
+			fileController.writeFail(w, "修改备注成功", nil)
+		}
+
+	})
 }

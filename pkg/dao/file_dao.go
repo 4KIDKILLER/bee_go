@@ -108,3 +108,8 @@ func (fileDao *FileDao) DeleteRowsByStatus(status int) (result sql.Result, err e
 	result, err = fileDao.mysql.Exec("DELETE FROM bee_file WHERE status=?", status)
 	return
 }
+
+func (fileDao *FileDao) UpdateRemarkByFileId(fileId, remark string, userId int) (result sql.Result, err error) {
+	result, err = fileDao.mysql.Exec("UPDATE bee_file SET remark=? WHERE file_id=? AND user_id=?", remark, fileId, userId)
+	return
+}
