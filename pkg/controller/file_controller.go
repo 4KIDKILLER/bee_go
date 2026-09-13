@@ -253,11 +253,11 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		result, err := fileController.fileService.UpdateRemarkService(editRemarkReq.Id, editRemarkReq.Remark, beeClaims.UserId)
+		_, err := fileController.fileService.UpdateRemarkService(editRemarkReq.Id, editRemarkReq.Remark, beeClaims.UserId)
 
 		if err != nil {
 			fileController.writeFail(w, "修改备注失败", err)
-		} else if result == 1 {
+		} else {
 			fileController.writeFail(w, "修改备注成功", nil)
 		}
 
@@ -276,11 +276,11 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		result, err := fileController.fileService.UpdateFolderCoverService(setCoverReq.Cover, setCoverReq.Id, setCoverReq.Position, beeClaims.UserId)
+		_, err := fileController.fileService.UpdateFolderCoverService(setCoverReq.Cover, setCoverReq.Id, setCoverReq.Position, beeClaims.UserId)
 
 		if err != nil {
 			fileController.writeFail(w, "封面设置失败", err)
-		} else if result == 1 {
+		} else {
 			fileController.writeSuccess(w, "封面设置成功", nil)
 		}
 	})
