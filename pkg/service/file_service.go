@@ -246,9 +246,9 @@ func (fileService *FileService) GetUserFileListService(uploadHost, parentId stri
 		return nil, Err6278
 	}
 
-	tagMap := make(map[string][]vo.FileTagListVo, len(fileIds))
+	tagMap := make(map[string][]vo.FileTagVo, len(fileIds))
 	for _, tag := range fileTags {
-		tagMap[tag.FileId] = append(tagMap[tag.FileId], vo.FileTagListVo{
+		tagMap[tag.FileId] = append(tagMap[tag.FileId], vo.FileTagVo{
 			Id:      tag.TagId,
 			TagName: tag.TagName,
 		})
@@ -260,7 +260,7 @@ func (fileService *FileService) GetUserFileListService(uploadHost, parentId stri
 		covers := [3]string{item.Cover1, item.Cover2, item.Cover3}
 		tags := tagMap[item.FileId]
 		if tags == nil {
-			tags = make([]vo.FileTagListVo, 0)
+			tags = make([]vo.FileTagVo, 0)
 		}
 		name := item.FileId + item.FileExt
 		src := ""

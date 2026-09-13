@@ -48,11 +48,11 @@ func (fileTagController *FileTagController) BindFileTagController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		_, err := fileTagController.fileTagService.CreateFileTagService(createTargetReq.TagName, createTargetReq.FileId, beeClaims.UserId)
+		_, data, err := fileTagController.fileTagService.CreateFileTagService(createTargetReq.TagName, createTargetReq.FileId, beeClaims.UserId)
 		if err != nil {
 			fileTagController.writeFail(w, "标签创建失败", err)
 		} else {
-			fileTagController.writeSuccess(w, "标签创建成功", nil)
+			fileTagController.writeSuccess(w, "标签创建成功", data)
 		}
 	})
 	/*
@@ -68,7 +68,7 @@ func (fileTagController *FileTagController) BindFileTagController() {
 			return
 		}
 
-		_, err := fileTagController.fileTagService.DeleteFileTagService(deleteTargetReq.Id)
+		_, err := fileTagController.fileTagService.DeleteFileTagService(deleteTargetReq.TagId)
 
 		if err != nil {
 			fileTagController.writeFail(w, "标签删除失败", err)

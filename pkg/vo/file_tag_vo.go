@@ -1,6 +1,6 @@
 package vo
 
-type FileTagListVo struct {
+type FileTagVo struct {
 	Id      string `json:"id"`
 	TagName string `json:"tagName"`
 }

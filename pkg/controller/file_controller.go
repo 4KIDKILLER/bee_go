@@ -266,7 +266,7 @@ func (fileController *FileController) BindFileController() {
 	/*
 		设置文件夹封面
 	*/
-	fileController.protectedMux.HandleFunc("POST /setCover", func(w http.ResponseWriter, r *http.Request) {
+	fileController.protectedMux.HandleFunc("POST /setFolderCover", func(w http.ResponseWriter, r *http.Request) {
 		var setCoverReq dto.SetCoverReq
 		decodeErr := json.NewDecoder(r.Body).Decode(&setCoverReq)
 		if decodeErr != nil {
@@ -281,7 +281,7 @@ func (fileController *FileController) BindFileController() {
 		if err != nil {
 			fileController.writeFail(w, "封面设置失败", err)
 		} else if result == 1 {
-			fileController.writeFail(w, "封面设置成功", nil)
+			fileController.writeSuccess(w, "封面设置成功", nil)
 		}
 	})
 }

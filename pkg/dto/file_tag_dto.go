@@ -6,5 +6,5 @@ type CreateTargetReq struct {
 }
 
 type DeleteTargetReq struct {
-	Id string `json:"id"`
+	TagId string `json:"tagId"`
 }

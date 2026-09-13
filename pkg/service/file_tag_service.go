@@ -4,6 +4,7 @@ import (
 	"errors"
 	"goserver/pkg/dao"
 	"goserver/pkg/utils"
+	"goserver/pkg/vo"
 )
 
 var (
@@ -28,17 +29,22 @@ func NewFileTagService(fileTagDao *dao.FileTagDao) (fileTagService *FileTagServi
 	return
 }
 
-func (fileTagService *FileTagService) CreateFileTagService(tagName, fileId string, userId int) (bool, error) {
+func (fileTagService *FileTagService) CreateFileTagService(tagName, fileId string, userId int) (bool, *vo.FileTagVo, error) {
 
 	tagId, _ := utils.GetUUID()
 
 	_, err := fileTagService.fileTagDao.Insert(tagName, tagId, fileId, userId)
 
+	data := new(vo.FileTagVo)
+
 	if err != nil {
-		return false, Err6350
+		return false, data, Err6350
 	}
 
-	return true, nil
+	data.Id = tagId
+	data.TagName = tagName
+
+	return true, data, nil
 }
 
 func (fileTagService *FileTagService) DeleteFileTagService(tagId string) (bool, error) {
