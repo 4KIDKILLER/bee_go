@@ -17,8 +17,8 @@ func NewFileDao(mysql *sqlx.DB) (fileDao *FileDao) {
 	return
 }
 
-func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType int) (result sql.Result, err error) {
-	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,cover_1,cover_2,cover_3,remark) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, cover1, cover2, cover3, remark)
+func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType, status int) (result sql.Result, err error) {
+	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,cover_1,cover_2,cover_3,remark,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, cover1, cover2, cover3, remark, status)
 	return
 }
 

@@ -6,6 +6,7 @@ import (
 	"goserver/pkg/dao"
 	"goserver/pkg/dto"
 	"goserver/pkg/infrastructure/config"
+	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/model"
 	"goserver/pkg/utils"
 	"goserver/pkg/vo"
@@ -77,6 +78,7 @@ const (
 
 // 错误码范围6250-6299
 type FileService struct {
+	jwt            *jwt.BeeJwt
 	fileDao        *dao.FileDao
 	fileTagDao     *dao.FileTagDao
 	fileConfig     config.FileConfig
@@ -100,8 +102,9 @@ type FileTreeNode struct {
 	Children   []*FileTreeNode `json:"children"`
 }
 
-func NewFileService(fileDao *dao.FileDao, fileTagDao *dao.FileTagDao, fileConfig config.FileConfig) (fileService *FileService) {
+func NewFileService(fileDao *dao.FileDao, fileTagDao *dao.FileTagDao, fileConfig config.FileConfig, jwt *jwt.BeeJwt) (fileService *FileService) {
 	fileService = &FileService{
+		jwt:            jwt,
 		fileDao:        fileDao,
 		fileConfig:     fileConfig,
 		fileTagDao:     fileTagDao,
@@ -132,7 +135,7 @@ func (fileService *FileService) thumbnailWorker() {
 	}
 }
 
-func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, remark string, fileSize int64, userId int) (bool, error) {
+func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, remark string, fileSize int64, userId, status int) (bool, error) {
 
 	uploadDir := utils.GetUploadDir(fileService.fileConfig)
 
@@ -164,7 +167,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		return false, Err6253
 	}
 
-	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", "", "", "", remark, fileSize, userId, 2)
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", "", "", "", remark, fileSize, userId, 2, status)
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
 		return false, Err6254
@@ -192,12 +195,12 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 	return true, nil
 }
 
-func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq, userId int) (bool, error) {
+func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq, status, userId int) (bool, error) {
 
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", 0, userId, 1)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", 0, userId, 1, status)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)

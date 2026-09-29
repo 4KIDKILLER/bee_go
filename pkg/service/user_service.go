@@ -4,7 +4,9 @@ import (
 	"errors"
 	"goserver/pkg/dao"
 	"goserver/pkg/dto"
+	"goserver/pkg/infrastructure/jwt"
 	"goserver/pkg/model"
+	"goserver/pkg/vo"
 	"log"
 	"strings"
 )
@@ -22,15 +24,21 @@ var (
 	Err6159 = errors.New("6159: 注册失败")
 	Err6160 = errors.New("6160: 注册失败")
 	Err6161 = errors.New("6161: 注册失败")
+	Err6162 = errors.New("6162: 验证失败")
+	Err6163 = errors.New("6163: 登录失败")
 )
 
 // 错误码范围6150-6199
 type UserService struct {
 	userDao *dao.UserDao
+	jwt     *jwt.BeeJwt
 }
 
-func NewUserService(userDao *dao.UserDao) (userService *UserService) {
-	userService = &UserService{userDao}
+func NewUserService(userDao *dao.UserDao, jwt *jwt.BeeJwt) (userService *UserService) {
+	userService = &UserService{
+		userDao: userDao,
+		jwt:     jwt,
+	}
 	return
 }
 
@@ -42,21 +50,32 @@ func (userService *UserService) GetUserInfoService(userId int) (beeUser *model.B
 	return
 }
 
-func (userService *UserService) LoginService(username, password string) (beeUser *model.BeeUser, err error) {
+func (userService *UserService) LoginService(username, password string) (*vo.UserLoginVo, error) {
 	if strings.TrimSpace(username) == "" {
 		return nil, Err6150
 	}
 	if strings.TrimSpace(password) == "" {
 		return nil, Err6152
 	}
-	beeUser, err = userService.userDao.SelectUserByNameAndPassword(username, password)
+	beeUser, err := userService.userDao.SelectUserByNameAndPassword(username, password)
 
 	if err != nil {
 		log.Printf("%v: %v", Err6154, err)
 		return nil, Err6154
 	}
 
-	return
+	token, tokenErr := userService.jwt.GenerateToken("default", beeUser.Username, beeUser.UserId)
+	if tokenErr != nil {
+		return nil, Err6163
+	}
+
+	loginInfo := &vo.UserLoginVo{
+		Avatar:   beeUser.Avatar,
+		Username: beeUser.Username,
+		Token:    "Bearer " + token,
+	}
+
+	return loginInfo, nil
 }
 
 func (userService *UserService) UserRegisterService(registerReq *dto.RegisterReq) (bool, error) {
@@ -98,4 +117,24 @@ func (userService *UserService) UserRegisterService(registerReq *dto.RegisterReq
 	}
 
 	return true, nil
+}
+
+func (userService *UserService) UserPrivateLoginService(userId int, password string) (*vo.UserLoginVo, error) {
+	beeUser, err := userService.userDao.SelectUserByUserIdAndPrivateKey(userId, password)
+	if err != nil {
+		return nil, Err6162
+	}
+
+	token, tokenErr := userService.jwt.GenerateToken("private", beeUser.Username, beeUser.UserId)
+	if tokenErr != nil {
+		return nil, Err6163
+	}
+
+	loginInfo := &vo.UserLoginVo{
+		Avatar:   beeUser.Avatar,
+		Username: beeUser.Username,
+		Token:    "Bearer " + token,
+	}
+
+	return loginInfo, nil
 }

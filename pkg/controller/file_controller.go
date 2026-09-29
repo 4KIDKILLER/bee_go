@@ -92,7 +92,13 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId)
+		status := 1
+
+		if beeClaims.Mode == "private" {
+			status = 2
+		}
+
+		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId, status)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 		} else {
@@ -112,7 +118,14 @@ func (fileController *FileController) BindFileController() {
 			return
 		}
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
-		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, beeClaims.UserId)
+
+		status := 1
+
+		if beeClaims.Mode == "private" {
+			status = 2
+		}
+
+		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, status, beeClaims.UserId)
 
 		if insertErr != nil {
 			fileController.writeFail(w, "文件夹创建失败", nil)

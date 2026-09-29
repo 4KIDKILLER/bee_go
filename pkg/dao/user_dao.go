@@ -47,3 +47,10 @@ func (userDao *UserDao) CountUserByName(username string) (count int, err error) 
 
 	return
 }
+
+func (userDao *UserDao) SelectUserByUserIdAndPrivateKey(userId int, privateKey string) (beeUser *model.BeeUser, err error) {
+	beeUser = &model.BeeUser{}
+	err = userDao.mysql.Get(beeUser, "SELECT username,avatar,status,user_id FROM bee_user WHERE user_id=? AND private_key=? AND status=1", userId, privateKey)
+
+	return
+}

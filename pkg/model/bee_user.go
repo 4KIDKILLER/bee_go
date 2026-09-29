@@ -7,6 +7,7 @@ type BeeUser struct {
 	UserId     int       `json:"userId" db:"user_id"`
 	Username   string    `json:"username"`
 	Password   string    `json:"password"`
+	PrivateKey string    `json:"private_key"`
 	CreateTime time.Time `json:"createTime" db:"create_time"`
 	UpdateTime time.Time `json:"updateTime" db:"update_time"`
 	Avatar     string    `json:"avatar"`

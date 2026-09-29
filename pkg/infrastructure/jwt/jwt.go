@@ -17,6 +17,7 @@ type claimsContextKey struct{}
 type BeeClaims struct {
 	Username string `json:"username"`
 	UserId   int    `json:"userId"`
+	Mode     string `json:"mode"`
 	jwtv5.RegisteredClaims
 }
 
@@ -26,8 +27,9 @@ func NewBeeJwt() (beeJwt *BeeJwt) {
 	return &BeeJwt{}
 }
 
-func (beeJwt *BeeJwt) GenerateToken(username string, userId int) (token string, err error) {
+func (beeJwt *BeeJwt) GenerateToken(username, mode string, userId int) (token string, err error) {
 	beeClaims := BeeClaims{
+		Mode:     mode,
 		Username: username,
 		UserId:   userId,
 		RegisteredClaims: jwtv5.RegisteredClaims{

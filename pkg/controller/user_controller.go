@@ -11,14 +11,12 @@ import (
 
 type UserController struct {
 	*BaseController
-	jwt          *jwt.BeeJwt
 	mux          *http.ServeMux
 	protectedMux *http.ServeMux
 	userService  *service.UserService
 }
 
 func NewUserController(
-	jwt *jwt.BeeJwt,
 	baseController *BaseController,
 	mux, protectedMux *http.ServeMux,
 	userService *service.UserService,
@@ -28,7 +26,6 @@ func NewUserController(
 ) {
 	userController = &UserController{
 		BaseController: baseController,
-		jwt:            jwt,
 		mux:            mux,
 		protectedMux:   protectedMux,
 		userService:    userService,
@@ -64,23 +61,12 @@ func (userController *UserController) BindUserController() {
 			return
 		}
 
-		beeUser, loginErr := userController.userService.LoginService(loginReq.Username, loginReq.Password)
-		if loginErr != nil {
-			userController.writeFail(w, loginErr.Error(), nil)
+		loginInfo, err := userController.userService.LoginService(loginReq.Username, loginReq.Password)
+		if err != nil {
+			userController.writeFail(w, err.Error(), nil)
 			return
 		}
 
-		token, tokenErr := userController.jwt.GenerateToken(beeUser.Username, beeUser.UserId)
-		if tokenErr != nil {
-			userController.writeFail(w, tokenErr.Error(), nil)
-			return
-		}
-
-		loginInfo := map[string]string{
-			"avatar":   beeUser.Avatar,
-			"username": beeUser.Username,
-			"token":    "Bearer " + token,
-		}
 		userController.writeSuccess(w, "登录成功", loginInfo)
 	})
 
@@ -102,5 +88,28 @@ func (userController *UserController) BindUserController() {
 		}
 
 		userController.writeSuccess(w, "注册成功", nil)
+	})
+
+	//私密模式验证
+	userController.protectedMux.HandleFunc("POST /private", func(w http.ResponseWriter, r *http.Request) {
+		var privateReq dto.PrivateReq
+
+		err := json.NewDecoder(r.Body).Decode(&privateReq)
+
+		if err != nil {
+			userController.writeError(w, http.StatusBadRequest, "参数解析失败")
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		loginInfo, err := userController.userService.UserPrivateLoginService(beeClaims.UserId, privateReq.Password)
+
+		if err != nil {
+			userController.writeFail(w, err.Error(), nil)
+			return
+		}
+
+		userController.writeSuccess(w, "验证成功", loginInfo)
 	})
 }
