@@ -95,7 +95,7 @@ func (fileController *FileController) BindFileController() {
 		status := 1
 
 		if beeClaims.Mode == "private" {
-			status = 2
+			status = 9
 		}
 
 		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId, status)
@@ -122,7 +122,7 @@ func (fileController *FileController) BindFileController() {
 		status := 1
 
 		if beeClaims.Mode == "private" {
-			status = 2
+			status = 9
 		}
 
 		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, status, beeClaims.UserId)
@@ -136,6 +136,7 @@ func (fileController *FileController) BindFileController() {
 	/*
 		获取用户文件列表
 	*/
+	//TODO私密模式只查状态为9的文件和文件夹
 	fileController.protectedMux.HandleFunc("GET /getFileList", func(w http.ResponseWriter, r *http.Request) {
 
 		query := r.URL.Query()

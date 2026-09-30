@@ -27,7 +27,7 @@ func NewBeeJwt() (beeJwt *BeeJwt) {
 	return &BeeJwt{}
 }
 
-func (beeJwt *BeeJwt) GenerateToken(username, mode string, userId int) (token string, err error) {
+func (beeJwt *BeeJwt) GenerateToken(mode, username string, userId int) (token string, err error) {
 	beeClaims := BeeClaims{
 		Mode:     mode,
 		Username: username,

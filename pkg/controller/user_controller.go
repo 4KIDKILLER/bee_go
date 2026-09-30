@@ -112,4 +112,11 @@ func (userController *UserController) BindUserController() {
 
 		userController.writeSuccess(w, "验证成功", loginInfo)
 	})
+
+	//用户token参数调试
+	userController.protectedMux.HandleFunc("GET /tokenInfo", func(w http.ResponseWriter, r *http.Request) {
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		userController.writeSuccess(w, "解析成功", beeClaims)
+	})
 }

@@ -218,6 +218,7 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 }
 
 func (fileService *FileService) GetUserFileListService(uploadHost, parentId string, userId, page, pageSize int) (*utils.PaginationJson[vo.FileListVo], error) {
+
 	fileCount, countErr := fileService.fileDao.CountRowByParentId(userId, parentId)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
