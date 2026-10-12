@@ -170,7 +170,26 @@ func (fileDao *FileDao) UpdateRowsIsPrivateByFileIds(fileIds []string, userId in
 	}
 
 	query = fileDao.mysql.Rebind(query)
+	// log.Printf(`
+	// 	WITH RECURSIVE file_tree AS (
+	// 		SELECT file_id,file_type
+	// 		FROM bee_file
+	// 		WHERE user_id=%v AND file_id IN %v
 
+	// 		UNION DISTINCT
+
+	// 		SELECT child.file_id,child.file_type
+	// 		FROM bee_file AS child
+	// 		INNER JOIN file_tree AS parent
+	// 			ON child.parent_id=parent.file_id
+	// 		WHERE child.user_id=%v AND parent.file_type=1
+	// 	)
+	// 	UPDATE bee_file AS file
+	// 	INNER JOIN file_tree AS tree
+	// 		ON file.file_id=tree.file_id
+	// 	SET file.is_private=2
+	// 	WHERE file.user_id=%v
+	// `, userId, fileIds, userId, userId)
 	execRes, err := fileDao.mysql.Exec(query, args...)
 	if err != nil {
 		return 0, err

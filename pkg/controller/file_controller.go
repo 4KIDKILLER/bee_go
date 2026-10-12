@@ -320,9 +320,9 @@ func (fileController *FileController) BindFileController() {
 		_, err := fileController.fileService.UpdatePrivateService(setPrivateReq.Ids, setPrivateReq.IsPrivate, beeClaims.UserId)
 
 		if err != nil {
-			fileController.writeFail(w, "操作成功", err)
+			fileController.writeSuccess(w, "操作成功", err)
 		} else {
-			fileController.writeSuccess(w, "操作失败", nil)
+			fileController.writeFail(w, "操作失败", nil)
 		}
 	})
 }
