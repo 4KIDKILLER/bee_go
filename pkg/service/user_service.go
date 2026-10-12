@@ -26,6 +26,8 @@ var (
 	Err6161 = errors.New("6161: 注册失败")
 	Err6162 = errors.New("6162: 验证失败")
 	Err6163 = errors.New("6163: 登录失败")
+	Err6164 = errors.New("6164: 退出登录失败")
+	Err6165 = errors.New("6165: 退出登录失败")
 )
 
 // 错误码范围6150-6199
@@ -128,6 +130,26 @@ func (userService *UserService) UserPrivateLoginService(userId int, password str
 	token, tokenErr := userService.jwt.GenerateToken("private", beeUser.Username, beeUser.UserId)
 	if tokenErr != nil {
 		return nil, Err6163
+	}
+
+	loginInfo := &vo.UserLoginVo{
+		Avatar:   beeUser.Avatar,
+		Username: beeUser.Username,
+		Token:    "Bearer " + token,
+	}
+
+	return loginInfo, nil
+}
+
+func (userService *UserService) UserPrivateExitService(userId int) (*vo.UserLoginVo, error) {
+	beeUser, err := userService.userDao.SelectUserByUId(userId)
+	if err != nil {
+		return nil, Err6164
+	}
+
+	token, tokenErr := userService.jwt.GenerateToken("default", beeUser.Username, beeUser.UserId)
+	if tokenErr != nil {
+		return nil, Err6165
 	}
 
 	loginInfo := &vo.UserLoginVo{

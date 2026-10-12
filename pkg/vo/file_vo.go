@@ -17,4 +17,5 @@ type FileListVo struct {
 	Remark       string            `json:"remark"`
 	CreateTime   overwrite.BeeTime `json:"createTime"`
 	UpdateTime   overwrite.BeeTime `json:"updateTime"`
+	IsPrivate    int               `json:"isPrivate"`
 }

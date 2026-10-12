@@ -30,6 +30,7 @@ var (
 	UpdateRemarkErr     = "修改文件备注失败"
 	UpdateCoverErr      = "设置文件夹封面失败"
 	PositionValiFailErr = "非法的position参数"
+	UpdatePrivateErr    = "设置失败"
 )
 
 var (
@@ -67,6 +68,7 @@ var (
 	Err6281 = errors.New("6281:" + PositionValiFailErr)
 	Err6282 = errors.New("6282:" + UpdateCoverErr)
 	Err6283 = errors.New("6283:" + UpdateCoverErr)
+	Err6284 = errors.New("6284:" + UpdatePrivateErr)
 )
 
 const (
@@ -135,7 +137,7 @@ func (fileService *FileService) thumbnailWorker() {
 	}
 }
 
-func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, remark string, fileSize int64, userId, status int) (bool, error) {
+func (fileService *FileService) UploadFileService(file multipart.File, parentId, fileOriginalName, remark string, fileSize int64, userId, isPrivate int) (bool, error) {
 
 	uploadDir := utils.GetUploadDir(fileService.fileConfig)
 
@@ -167,7 +169,7 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 		return false, Err6253
 	}
 
-	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", "", "", "", remark, fileSize, userId, 2, status)
+	insert, insertErr := fileService.fileDao.Insert(parentId, fileId, fileOriginalName, fileExt, uploadDir.Original, "", "", "", "", remark, fileSize, userId, 2, isPrivate)
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
 		return false, Err6254
@@ -195,12 +197,12 @@ func (fileService *FileService) UploadFileService(file multipart.File, parentId,
 	return true, nil
 }
 
-func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq, status, userId int) (bool, error) {
+func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq, isPrivate, userId int) (bool, error) {
 
 	//创建文件夹ID
 	folderId, _ := utils.GetUUID()
 
-	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", 0, userId, 1, status)
+	insert, insertErr := fileService.fileDao.Insert(reqData.ParentId, folderId, reqData.FolderName, "", "", "", "", "", "", "", 0, userId, 1, isPrivate)
 
 	if insertErr != nil {
 		log.Printf("%v: %v", Err6254, insertErr)
@@ -217,14 +219,14 @@ func (fileService *FileService) CreateFolderService(reqData *dto.CreateFolderReq
 	return true, nil
 }
 
-func (fileService *FileService) GetUserFileListService(uploadHost, parentId string, userId, page, pageSize int) (*utils.PaginationJson[vo.FileListVo], error) {
+func (fileService *FileService) GetUserFileListService(uploadHost, parentId string, userId int, page, pageSize int64, isPrivates []int) (*utils.PaginationJson[vo.FileListVo], error) {
 
-	fileCount, countErr := fileService.fileDao.CountRowByParentId(userId, parentId)
+	fileCount, countErr := fileService.fileDao.CountRowByParentId(userId, parentId, isPrivates)
 	if countErr != nil {
 		log.Printf("%v: %v", Err6261, countErr)
 		return nil, Err6261
 	}
-	fileList, err := fileService.fileDao.SelectRowsLimitByUserId(parentId, userId, (page-1)*pageSize, pageSize)
+	fileList, err := fileService.fileDao.SelectRowsLimitByUserId(parentId, userId, (page-1)*pageSize, pageSize, isPrivates)
 	if err != nil {
 		log.Printf("%v: %v", Err6262, err)
 		return nil, Err6262
@@ -288,6 +290,7 @@ func (fileService *FileService) GetUserFileListService(uploadHost, parentId stri
 			Remark:       item.Remark,
 			CreateTime:   item.CreateTime,
 			UpdateTime:   item.UpdateTime,
+			IsPrivate:    item.IsPrivate,
 		})
 	}
 
@@ -367,8 +370,8 @@ func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeN
 
 	return tree, nil
 }
-
 func (fileService *FileService) DeleteFolderSoftService(fileId string, userId int) (bool, error) {
+	//FIXME 如果删除的是单个文件，则不需要进行递归，文件夹才需要
 	fileIds, fileIdsErr := fileService.fileDao.SelectRowsRecursionByFileId(fileId, userId)
 	if fileIdsErr != nil {
 		log.Printf("%v: %v", Err6269, fileIdsErr)
@@ -481,4 +484,14 @@ func (fileService *FileService) UpdateFolderCoverService(cover, fileId string, p
 	}
 
 	return rows, nil
+}
+
+func (fileService *FileService) UpdatePrivateService(fileIds []string, isPrivate, userId int) (int64, error) {
+	result, err := fileService.fileDao.UpdateRowsIsPrivateByFileIds(fileIds, userId)
+
+	if err != nil {
+		return 0, Err6284
+	}
+
+	return result, err
 }

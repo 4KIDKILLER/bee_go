@@ -92,13 +92,13 @@ func (fileController *FileController) BindFileController() {
 
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		status := 1
+		isPrivate := 1
 
 		if beeClaims.Mode == "private" {
-			status = 9
+			isPrivate = 2
 		}
 
-		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId, status)
+		_, resultErr := fileController.fileService.UploadFileService(file, parentId, safeFilename, remark, fileHeader.Size, beeClaims.UserId, isPrivate)
 		if resultErr != nil {
 			fileController.writeFail(w, resultErr.Error(), nil)
 		} else {
@@ -119,13 +119,13 @@ func (fileController *FileController) BindFileController() {
 		}
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		status := 1
+		isPrivate := 1
 
 		if beeClaims.Mode == "private" {
-			status = 9
+			isPrivate = 2
 		}
 
-		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, status, beeClaims.UserId)
+		_, insertErr := fileController.fileService.CreateFolderService(&createFolderReq, isPrivate, beeClaims.UserId)
 
 		if insertErr != nil {
 			fileController.writeFail(w, "文件夹创建失败", nil)
@@ -136,7 +136,6 @@ func (fileController *FileController) BindFileController() {
 	/*
 		获取用户文件列表
 	*/
-	//TODO私密模式只查状态为9的文件和文件夹
 	fileController.protectedMux.HandleFunc("GET /getFileList", func(w http.ResponseWriter, r *http.Request) {
 
 		query := r.URL.Query()
@@ -154,14 +153,20 @@ func (fileController *FileController) BindFileController() {
 		}
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
 
-		page, pageErr := strconv.Atoi(pageStr)
-		pageSize, pageSizeErr := strconv.Atoi(pageSizeStr)
+		page, pageErr := strconv.ParseInt(pageStr, 10, 64)
+		pageSize, pageSizeErr := strconv.ParseInt(pageSizeStr, 10, 64)
 		if pageErr != nil || pageSizeErr != nil {
 			fileController.writeFail(w, "分页参数异常", nil)
 			return
 		}
 
-		fileList, err := fileController.fileService.GetUserFileListService(fileController.config.Upload.Host, parentId, beeClaims.UserId, page, pageSize)
+		isPrivates := []int{1}
+
+		if beeClaims.Mode == "private" {
+			isPrivates = append(isPrivates, 2)
+		}
+
+		fileList, err := fileController.fileService.GetUserFileListService(fileController.config.Upload.Host, parentId, beeClaims.UserId, page, pageSize, isPrivates)
 
 		if err != nil {
 			fileController.writeFail(w, "获取文件列表失败", nil)
@@ -296,6 +301,28 @@ func (fileController *FileController) BindFileController() {
 			fileController.writeFail(w, "封面设置失败", err)
 		} else {
 			fileController.writeSuccess(w, "封面设置成功", nil)
+		}
+	})
+
+	/*
+		将文件/文件夹设置为私密文件/文件夹
+	*/
+	fileController.protectedMux.HandleFunc("POST /setPrivate", func(w http.ResponseWriter, r *http.Request) {
+		var setPrivateReq dto.SetPrivateReq
+		decodeErr := json.NewDecoder(r.Body).Decode(&setPrivateReq)
+		if decodeErr != nil {
+			fileController.writeFail(w, "参数解析失败", nil)
+			return
+		}
+
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		_, err := fileController.fileService.UpdatePrivateService(setPrivateReq.Ids, setPrivateReq.IsPrivate, beeClaims.UserId)
+
+		if err != nil {
+			fileController.writeFail(w, "操作成功", err)
+		} else {
+			fileController.writeSuccess(w, "操作失败", nil)
 		}
 	})
 }

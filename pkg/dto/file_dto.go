@@ -37,3 +37,8 @@ type SetCoverReq struct {
 	Cover    string `json:"cover"`
 	Position int    `json:"position"`
 }
+
+type SetPrivateReq struct {
+	Ids       []string `json:"ids"`
+	IsPrivate int      `json:"isPrivate"`
+}

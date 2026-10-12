@@ -9,10 +9,10 @@ type ResponseJson struct {
 }
 
 type PaginationJson[T any] struct {
-	List     []T `json:"list"`
-	Total    int `json:"total"`
-	Page     int `json:"page"`
-	PageSize int `json:"pageSize"`
+	List     []T   `json:"list"`
+	Total    int64 `json:"total"`
+	Page     int64 `json:"page"`
+	PageSize int64 `json:"pageSize"`
 }
 
 func jsonMarshal(response ResponseJson) []byte {

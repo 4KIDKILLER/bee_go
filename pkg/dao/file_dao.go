@@ -17,19 +17,34 @@ func NewFileDao(mysql *sqlx.DB) (fileDao *FileDao) {
 	return
 }
 
-func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType, status int) (result sql.Result, err error) {
-	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,cover_1,cover_2,cover_3,remark,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, cover1, cover2, cover3, remark, status)
+func (fileDao *FileDao) Insert(parentId, fileId, fileOriginalName, fileExt, filePath, fileThumbPath, cover1, cover2, cover3, remark string, fileSize int64, userId, fileType, isPrivate int) (result sql.Result, err error) {
+	result, err = fileDao.mysql.Exec("INSERT INTO bee_file (parent_id,file_id,user_id,file_original_name,file_ext,file_size,file_path,file_thumb_path,file_type,cover_1,cover_2,cover_3,remark,is_private) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", parentId, fileId, userId, fileOriginalName, fileExt, fileSize, filePath, fileThumbPath, fileType, cover1, cover2, cover3, remark, isPrivate)
 	return
 }
 
-func (fileDao *FileDao) CountRowByParentId(userId int, parentId string) (count int, err error) {
-	err = fileDao.mysql.Get(&count, "SELECT COUNT(file_id) FROM bee_file WHERE user_id=? AND parent_id=? AND status=1", userId, parentId)
+func (fileDao *FileDao) CountRowByParentId(userId int, parentId string, isPrivates []int) (count int64, err error) {
+
+	query, args, err := sqlx.In("SELECT COUNT(*) FROM bee_file WHERE user_id=? AND parent_id=? AND is_private IN (?) AND status=1", userId, parentId, isPrivates)
+	if err != nil {
+		return 0, err
+	}
+
+	query = fileDao.mysql.Rebind(query)
+
+	err = fileDao.mysql.Get(&count, query, args...)
 	return
 }
 
-func (fileDao *FileDao) SelectRowsLimitByUserId(parentId string, userId, page, pageSize int) (result []*model.BeeFile, err error) {
-	err = fileDao.mysql.Select(&result, "SELECT parent_id,file_id,user_id,file_original_name,file_ext,file_path,file_thumb_path,file_size,file_type,cover_1,cover_2,cover_3,remark,create_time,update_time FROM bee_file WHERE user_id=? AND parent_id=? AND status=1 ORDER BY id DESC LIMIT ?, ?", userId, parentId, page, pageSize)
+func (fileDao *FileDao) SelectRowsLimitByUserId(parentId string, userId int, page, pageSize int64, isPrivates []int) (result []*model.BeeFile, err error) {
+	query, args, err := sqlx.In("SELECT parent_id,file_id,user_id,file_original_name,file_ext,file_path,file_thumb_path,file_size,file_type,cover_1,cover_2,cover_3,remark,create_time,update_time,is_private,status FROM bee_file WHERE user_id=? AND parent_id=? AND is_private IN (?) AND status=1 ORDER BY id DESC LIMIT ?, ?", userId, parentId, isPrivates, page, pageSize)
 
+	if err != nil {
+		return nil, err
+	}
+
+	query = fileDao.mysql.Rebind(query)
+
+	err = fileDao.mysql.Select(&result, query, args...)
 	return
 }
 
@@ -57,6 +72,9 @@ func (fileDao *FileDao) SelectRowsRecursionByFileId(fileId string, userId int) (
 	//这里的result返回的类型是[]string,使用select需要注意只能有一列，
 	//即select file_id，不能多列select file_id,file_type
 	if fileId != "" {
+		/*
+			如果fileId存在，则查询当前文件夹下的所有文件/文件夹
+		*/
 		err = fileDao.mysql.Select(&result, `WITH RECURSIVE file_tree AS (
 						SELECT file_id,file_type,file_original_name FROM bee_file WHERE file_id=? AND user_id=?
 						UNION ALL
@@ -67,6 +85,9 @@ func (fileDao *FileDao) SelectRowsRecursionByFileId(fileId string, userId int) (
 			userId,
 		)
 	} else {
+		/*
+			否则查询当前用户下的所有正常状态的文件/文件夹
+		*/
 		err = fileDao.mysql.Select(&result, "SELECT file_id FROM bee_file WHERE user_id=? AND `status`=1",
 			userId,
 		)
@@ -119,5 +140,42 @@ func (fileDao *FileDao) UpdateCoverByFileId(cover, fileId string, position, user
 
 	query := fmt.Sprintf("UPDATE bee_file SET cover_%d=? WHERE file_id=? AND user_id=?", position)
 	result, err = fileDao.mysql.Exec(query, cover, fileId, userId)
+	return
+}
+
+func (fileDao *FileDao) UpdateRowsIsPrivateByFileIds(fileIds []string, userId int) (result int64, err error) {
+	query, args, err := sqlx.In(`
+		WITH RECURSIVE file_tree AS (
+			SELECT file_id,file_type 
+			FROM bee_file
+			WHERE user_id=? AND file_id IN (?)
+
+			UNION DISTINCT
+
+			SELECT child.file_id,child.file_type 
+			FROM bee_file AS child
+			INNER JOIN file_tree AS parent
+				ON child.parent_id=parent.file_id
+			WHERE child.user_id=? AND parent.file_type=1
+		)
+		UPDATE bee_file AS file 
+		INNER JOIN file_tree AS tree
+			ON file.file_id=true.file_id
+		SET file.is_private=2
+		WHERE file.user_id=?
+	`, userId, fileIds, userId, userId)
+
+	if err != nil {
+		return 0, err
+	}
+
+	query = fileDao.mysql.Rebind(query)
+
+	execRes, err := fileDao.mysql.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	result, err = execRes.RowsAffected()
 	return
 }

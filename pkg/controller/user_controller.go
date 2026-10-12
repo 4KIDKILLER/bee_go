@@ -113,6 +113,25 @@ func (userController *UserController) BindUserController() {
 		userController.writeSuccess(w, "验证成功", loginInfo)
 	})
 
+	//退出私密模式
+	userController.protectedMux.HandleFunc("POST /exitPrivate", func(w http.ResponseWriter, r *http.Request) {
+		beeClaims, _ := jwt.ClaimsFromContext(r.Context())
+
+		if beeClaims.Mode != "private" {
+			userController.writeError(w, http.StatusBadRequest, "非法操作")
+			return
+		}
+
+		loginInfo, err := userController.userService.UserPrivateExitService(beeClaims.UserId)
+
+		if err != nil {
+			userController.writeFail(w, err.Error(), nil)
+			return
+		}
+
+		userController.writeSuccess(w, "验证成功", loginInfo)
+	})
+
 	//用户token参数调试
 	userController.protectedMux.HandleFunc("GET /tokenInfo", func(w http.ResponseWriter, r *http.Request) {
 		beeClaims, _ := jwt.ClaimsFromContext(r.Context())

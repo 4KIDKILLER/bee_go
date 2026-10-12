@@ -19,5 +19,6 @@ type BeeFile struct {
 	Remark           string            `json:"remark"`
 	CreateTime       overwrite.BeeTime `json:"createTime" db:"create_time"`
 	UpdateTime       overwrite.BeeTime `json:"updateTime" db:"update_time"`
+	IsPrivate        int               `json:"isPrivate" db:"is_private"`
 	Status           int               `json:"status"`
 }
