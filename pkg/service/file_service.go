@@ -487,7 +487,7 @@ func (fileService *FileService) UpdateFolderCoverService(cover, fileId string, p
 }
 
 func (fileService *FileService) UpdatePrivateService(fileIds []string, isPrivate, userId int) (int64, error) {
-	result, err := fileService.fileDao.UpdateRowsIsPrivateByFileIds(fileIds, userId)
+	result, err := fileService.fileDao.UpdateRowsIsPrivateByFileIds(fileIds, isPrivate, userId)
 
 	if err != nil {
 		return 0, Err6284

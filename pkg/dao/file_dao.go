@@ -143,7 +143,7 @@ func (fileDao *FileDao) UpdateCoverByFileId(cover, fileId string, position, user
 	return
 }
 
-func (fileDao *FileDao) UpdateRowsIsPrivateByFileIds(fileIds []string, userId int) (result int64, err error) {
+func (fileDao *FileDao) UpdateRowsIsPrivateByFileIds(fileIds []string, isPrivate, userId int) (result int64, err error) {
 	query, args, err := sqlx.In(`
 		WITH RECURSIVE file_tree AS (
 			SELECT file_id,file_type 
@@ -160,10 +160,10 @@ func (fileDao *FileDao) UpdateRowsIsPrivateByFileIds(fileIds []string, userId in
 		)
 		UPDATE bee_file AS file 
 		INNER JOIN file_tree AS tree
-			ON file.file_id=true.file_id
-		SET file.is_private=2
+			ON file.file_id=tree.file_id
+		SET file.is_private=?
 		WHERE file.user_id=?
-	`, userId, fileIds, userId, userId)
+	`, userId, fileIds, userId, isPrivate, userId)
 
 	if err != nil {
 		return 0, err
