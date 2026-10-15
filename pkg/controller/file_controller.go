@@ -178,6 +178,7 @@ func (fileController *FileController) BindFileController() {
 	/*
 		软删除文件或文件夹
 	*/
+	//FIXME 实时文件/文件夹混合/独立批量删除
 	fileController.protectedMux.HandleFunc("POST /deleteSoft", func(w http.ResponseWriter, r *http.Request) {
 		var deleteSoftReq dto.DeleteSoftReq
 		decodeErr := json.NewDecoder(r.Body).Decode(&deleteSoftReq)

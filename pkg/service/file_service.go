@@ -371,7 +371,7 @@ func (fileService *FileService) GetUserFileTreeService(userId int) ([]*FileTreeN
 	return tree, nil
 }
 func (fileService *FileService) DeleteFolderSoftService(fileId string, userId int) (bool, error) {
-	//FIXME 如果删除的是单个文件，则不需要进行递归，文件夹才需要
+
 	fileIds, fileIdsErr := fileService.fileDao.SelectRowsRecursionByFileId(fileId, userId)
 	if fileIdsErr != nil {
 		log.Printf("%v: %v", Err6269, fileIdsErr)
