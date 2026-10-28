@@ -1,0 +1,26 @@
+[Unit]
+Description=bee_go
+#这行配置告诉 systemd：等系统网络层初始化到 network.target 这个阶段后，再启动我的服务
+After=network.target
+
+[Service]
+# 指定运行服务的用户，建议使用非 root 用户
+User=ubuntu
+Group=ubuntu
+
+# 你的 Go 二进制文件的绝对路径
+ExecStart=/usr/local/bin/bee_go -env=online
+
+# 如果程序需要工作目录，取消下面这行的注释并修改
+WorkingDirectory=/etc/bee_go
+
+# 进程意外退出时总是重启
+Restart=always
+RestartSec=5
+
+# 可选：设置环境变量
+# Environment=PORT=8080
+
+[Install]
+#当系统进入多用户模式（正常启动完成）时，启动我的服务。
+WantedBy=multi-user.target
