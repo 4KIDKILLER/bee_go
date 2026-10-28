@@ -21,3 +21,6 @@
 
 ### 20261012
 + `bee_file`添加`is_private`字段
+
+### 20261028
++ 添加`online.yaml`环境配置，`-env`支持设置`online`

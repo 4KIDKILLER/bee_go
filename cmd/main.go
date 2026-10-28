@@ -15,7 +15,7 @@ var systemConf *config.Config
 
 func init() {
 
-	host := flag.String("env", "mac", "当前系统环境 [mac|windows|prod]")
+	host := flag.String("env", "mac", "当前系统环境 [mac|windows|prod|prod-test|online]")
 
 	// 自定义 Usage 函数
 	flag.Usage = func() {
@@ -27,7 +27,7 @@ options:
 
 	flag.Parse()
 
-	if *host != "mac" && *host != "windows" && *host != "prod" && *host != "prod-test" {
+	if *host != "mac" && *host != "windows" && *host != "prod" && *host != "prod-test" && *host != "online" {
 		panic("无效的-env参数")
 	}
 

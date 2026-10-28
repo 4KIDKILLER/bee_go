@@ -1,0 +1,15 @@
+server:
+  port: "0.0.0.0:6002"
+mysql:
+  db: "bee"
+  host: "203.195.243.216"
+  port: "3306"
+  username: "ubuntu"
+  password: "Lxl@414740"
+  maxOpenConns: 10
+  maxIdleConns: 10
+file:
+  thumb: "thumb"
+  original: "original"
+  path: "/var/www/bee_album"
+  host: "http://192.168.2.3:6003"  
