@@ -109,8 +109,11 @@ func NewHttpServer(config *config.Config) *http.Server {
 
 	mux.Handle("/", ProtectedMux(protectedMux, beeJwt, responseJson))
 
+	rootMux := http.NewServeMux()
+	rootMux.Handle("/bee/", http.StripPrefix("/bee", mux))
+
 	return &http.Server{
-		Handler: middleware(mux),
+		Handler: middleware(rootMux),
 		Addr:    config.Server.Port,
 	}
 }
